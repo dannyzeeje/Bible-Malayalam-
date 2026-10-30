@@ -57,17 +57,3 @@ android/key.properties
 *.jks
 *.keystore
 .env
-
-# Private signing files
-*.jks
-*.keystore
-**/key.properties
-**/keystore.properties
-.env
-.env.*
-
-# Generated Flutter files
-.dart_tool/
-build/
-**/.gradle/
-**/build/
