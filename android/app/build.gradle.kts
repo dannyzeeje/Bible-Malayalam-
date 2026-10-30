@@ -8,7 +8,7 @@ plugins {
 }
 
 val releaseKeyProperties = Properties().apply {
-    rootProject.file("key.properties").inputStream().use { load(it) }
+    rootProject.file("key.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -39,7 +39,7 @@ android {
         create("wordRelease") {
             keyAlias = releaseKeyProperties.getProperty("keyAlias")
             keyPassword = releaseKeyProperties.getProperty("keyPassword")
-            storeFile = file(releaseKeyProperties.getProperty("storeFile"))
+            storeFile = releaseKeyProperties.getProperty("storeFile")?.let { file(it) }
             storePassword = releaseKeyProperties.getProperty("storePassword")
         }
     }
