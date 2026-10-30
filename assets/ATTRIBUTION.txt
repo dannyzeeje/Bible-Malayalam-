@@ -1,0 +1,11 @@
+Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.
+Copyright © 2015 The Free Bible Foundation.
+Edition: mal2015 / MALFBF.
+Text license: Creative Commons Attribution-ShareAlike 4.0 International.
+https://creativecommons.org/licenses/by-sa/4.0/
+Source: https://ebible.org/mal2015/
+Downloaded source export: https://ebible.org/Scriptures/mal2015_vpl.zip
+The Bible text remains CC BY-SA 4.0. The verse-per-line text has been converted to JSON without intentionally changing wording. Source-export formatting, notes and noncanonical section headings are not included. Publisher endorsement is not implied.
+Noto Serif Malayalam font: SIL Open Font License 1.1 (see fonts/OFL.txt).
+Source VPL SHA-256: a6160ef84db321abee9237ecf31f6689b614443f5993124f455a0561774d429c
+Imported 66 books, 1189 chapters and 31098 verse records (source numbering retained).

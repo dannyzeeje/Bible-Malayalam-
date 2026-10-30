@@ -1,0 +1,48 @@
+name: word_bible
+description: An offline Malayalam Bible reader with English controls.
+publish_to: none
+version: 2.3.0+15
+environment:
+  sdk: ^3.10.1
+dependencies:
+  flutter:
+    sdk: flutter
+  characters: ^1.4.0
+  cupertino_icons: ^1.0.8
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  shaders:
+    - shaders/status_veil.frag
+  assets:
+    - assets/bible.json
+    - assets/source_about.html
+    - assets/ATTRIBUTION.txt
+    - assets/fonts/OFL.txt
+    - assets/fonts/NotoSansMalayalam-OFL.txt
+    - assets/fonts/Manjari-OFL.txt
+    - assets/fonts/Gayathri-OFL.txt
+    - assets/fonts/Inter-OFL.txt
+    - assets/fonts/Lora-OFL.txt
+  fonts:
+    - family: Malayalam
+      fonts:
+        - asset: assets/fonts/NotoSerifMalayalam.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: Editorial
+      fonts:
+        - asset: assets/fonts/Lora.ttf
+    - family: MalayalamSans
+      fonts:
+        - asset: assets/fonts/NotoSansMalayalam.ttf
+    - family: Manjari
+      fonts:
+        - asset: assets/fonts/Manjari.ttf
+    - family: Gayathri
+      fonts:
+        - asset: assets/fonts/Gayathri.ttf

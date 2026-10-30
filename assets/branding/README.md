@@ -1,0 +1,1 @@
+Original approved open-Bible concept with a negative-space cross. Symmetrical filled geometry, black and white only. Native adaptive foreground has 28/110 side padding; foreground fits safely inside Android masks. SVG is the editable master and matches Android vectors and Flutter paths. No bitmap branding or loading screen.
