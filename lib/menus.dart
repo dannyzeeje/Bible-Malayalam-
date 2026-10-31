@@ -1,15 +1,53 @@
 part of 'main.dart';
 
 Future<void> appearance(BuildContext context, BibleStore s) =>
-    showModalBottomSheet<void>(
+    showGeneralDialog<void>(
       context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * .86,
+      barrierDismissible: true,
+      barrierLabel: 'Close appearance',
+      barrierColor: Colors.black.withValues(alpha: .18),
+      transitionDuration: motionDuration(context, 300),
+      pageBuilder: (popup, animation, secondaryAnimation) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => Navigator.pop(popup),
+              child: BackdropFilter(
+                key: const ValueKey('appearance-backdrop'),
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: const ColoredBox(color: Colors.transparent),
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: FractionallySizedBox(
+                heightFactor: .92,
+                child: SlideTransition(
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0, .06),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: ReadingAppearance(store: s),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      builder: (_) => ReadingAppearance(store: s),
+      transitionBuilder: (context, animation, secondaryAnimation, child) =>
+          FadeTransition(opacity: animation, child: child),
     );
 
 class ReadingAppearance extends StatelessWidget {
@@ -42,12 +80,18 @@ class ReadingAppearance extends StatelessWidget {
                   // This preview sits outside the scrolling control panel.
                   Container(
                     key: const ValueKey('typeface-preview'),
-                    height: (box.maxHeight * .31).clamp(130.0, 240.0),
-                    margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    height: (box.maxHeight * .27).clamp(130.0, 210.0),
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: toneOf(context).background,
-                      borderRadius: BorderRadius.circular(26),
+                      color: Color.alphaBlend(
+                        toneOf(context).panelA,
+                        toneOf(context).background,
+                      ),
+                      border: Border.all(
+                        color: uiAccent(context).withValues(alpha: .18),
+                      ),
+                      borderRadius: BorderRadius.circular(28),
                     ),
                     child: ClipRect(
                       child: Column(
@@ -114,7 +158,7 @@ class ReadingAppearance extends StatelessWidget {
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: heading('Appearance', size: 21),
+                                    child: heading('Appearance', size: 27),
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
@@ -133,177 +177,199 @@ class ReadingAppearance extends StatelessWidget {
                                   20,
                                 ),
                                 children: [
-                                  Row(
-                                    children: [
-                                      menuLabel(context, 'Text size'),
-                                      const Spacer(),
-                                      Text(
-                                        '${s.fontSize.round()} pt',
-                                        style: TextStyle(
-                                          color: uiAccent(context),
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        tooltip: 'Decrease text size',
-                                        icon: const Icon(
-                                          CupertinoIcons.minus,
-                                          size: 18,
-                                        ),
-                                        onPressed: s.fontSize > 16
-                                            ? () => update(
-                                                context,
-                                                () => s.fontSize =
-                                                    (s.fontSize - 1).clamp(
-                                                      16,
-                                                      34,
-                                                    ),
-                                              )
-                                            : null,
-                                      ),
-                                      Expanded(
-                                        child: CupertinoSlider(
-                                          key: const ValueKey(
-                                            'text-size-slider',
+                                  appearanceGroup(context, [
+                                    Row(
+                                      children: [
+                                        menuLabel(context, 'Text size'),
+                                        const Spacer(),
+                                        Text(
+                                          '${s.fontSize.round()} pt',
+                                          style: TextStyle(
+                                            color: uiAccent(context),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 18,
                                           ),
-                                          min: 16,
-                                          max: 34,
-                                          divisions: 18,
-                                          activeColor: uiAccent(context),
-                                          value: s.fontSize.clamp(16, 34),
-                                          onChanged: (v) => update(
-                                            context,
-                                            () => s.fontSize = v,
-                                            persist: false,
-                                          ),
-                                          onChangeEnd: (_) => save(context, s),
                                         ),
-                                      ),
-                                      IconButton(
-                                        tooltip: 'Increase text size',
-                                        icon: const Icon(
-                                          CupertinoIcons.plus,
-                                          size: 18,
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          tooltip: 'Decrease text size',
+                                          icon: const Icon(
+                                            CupertinoIcons.minus,
+                                            size: 18,
+                                          ),
+                                          onPressed: s.fontSize > 16
+                                              ? () => update(
+                                                  context,
+                                                  () => s.fontSize =
+                                                      (s.fontSize - 1).clamp(
+                                                        16,
+                                                        34,
+                                                      ),
+                                                )
+                                              : null,
                                         ),
-                                        onPressed: s.fontSize < 34
-                                            ? () => update(
-                                                context,
-                                                () => s.fontSize =
-                                                    (s.fontSize + 1).clamp(
-                                                      16,
-                                                      34,
-                                                    ),
-                                              )
-                                            : null,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  menuLabel(context, 'Theme'),
-                                  const SizedBox(height: 10),
-                                  PillSegments<int>(
-                                    items: const {
-                                      0: 'Light',
-                                      1: 'Paper',
-                                      2: 'Dark',
-                                    },
-                                    selected: s.theme,
-                                    onChanged: (v) =>
-                                        update(context, () => s.theme = v),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  menuLabel(context, 'Typeface'),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    height: 82,
-                                    child: ListView.separated(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: readingFonts.length,
-                                      separatorBuilder: (_, _) =>
-                                          const SizedBox(width: 8),
-                                      itemBuilder: (context, i) {
-                                        final e = readingFonts.entries
-                                            .elementAt(i);
-                                        return InkWell(
-                                          key: ValueKey('font-${e.key}'),
-                                          borderRadius: BorderRadius.circular(
-                                            18,
+                                        Expanded(
+                                          child: CupertinoSlider(
+                                            key: const ValueKey(
+                                              'text-size-slider',
+                                            ),
+                                            min: 16,
+                                            max: 34,
+                                            divisions: 18,
+                                            activeColor: uiAccent(context),
+                                            value: s.fontSize.clamp(16, 34),
+                                            onChanged: (v) => update(
+                                              context,
+                                              () => s.fontSize = v,
+                                              persist: false,
+                                            ),
+                                            onChangeEnd: (_) =>
+                                                save(context, s),
                                           ),
-                                          onTap: () => update(
-                                            context,
-                                            () => s.fontFamily = e.key,
+                                        ),
+                                        IconButton(
+                                          tooltip: 'Increase text size',
+                                          icon: const Icon(
+                                            CupertinoIcons.plus,
+                                            size: 18,
                                           ),
-                                          child: Container(
-                                            width: 112,
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: uiFill(context),
-                                              borderRadius:
-                                                  BorderRadius.circular(18),
-                                              border: Border.all(
-                                                width: 1.5,
+                                          onPressed: s.fontSize < 34
+                                              ? () => update(
+                                                  context,
+                                                  () => s.fontSize =
+                                                      (s.fontSize + 1).clamp(
+                                                        16,
+                                                        34,
+                                                      ),
+                                                )
+                                              : null,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ]),
+                                  const SizedBox(height: 14),
+                                  appearanceGroup(context, [
+                                    menuLabel(context, 'Theme'),
+                                    const SizedBox(height: 10),
+                                    PillSegments<int>(
+                                      items: const {
+                                        0: 'Light',
+                                        1: 'Paper',
+                                        2: 'Dark',
+                                      },
+                                      selected: s.theme,
+                                      onChanged: (v) =>
+                                          update(context, () => s.theme = v),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ]),
+                                  const SizedBox(height: 14),
+                                  appearanceGroup(context, [
+                                    menuLabel(context, 'Typeface'),
+                                    const SizedBox(height: 10),
+                                    SizedBox(
+                                      height: 90,
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: readingFonts.length,
+                                        separatorBuilder: (_, _) =>
+                                            const SizedBox(width: 8),
+                                        itemBuilder: (context, i) {
+                                          final e = readingFonts.entries
+                                              .elementAt(i);
+                                          return InkWell(
+                                            key: ValueKey('font-${e.key}'),
+                                            borderRadius: BorderRadius.circular(
+                                              18,
+                                            ),
+                                            onTap: () => update(
+                                              context,
+                                              () => s.fontFamily = e.key,
+                                            ),
+                                            child: Container(
+                                              width: 120,
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
                                                 color: s.fontFamily == e.key
-                                                    ? uiAccent(context)
-                                                    : Colors.transparent,
+                                                    ? uiAccent(
+                                                        context,
+                                                      ).withValues(alpha: .12)
+                                                    : uiFill(
+                                                        context,
+                                                      ).withValues(alpha: .5),
+                                                borderRadius:
+                                                    BorderRadius.circular(18),
+                                                border: Border.all(
+                                                  width: 1.5,
+                                                  color: s.fontFamily == e.key
+                                                      ? uiAccent(context)
+                                                      : Colors.transparent,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    'അക്ഷരം',
+                                                    style: TextStyle(
+                                                      fontFamily: e.key,
+                                                      fontSize: 18,
+                                                      height: 1.6,
+                                                      color: uiInk(context),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    e.value,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: uiMuted(context),
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                            child: Column(
-                                              children: [
-                                                Text(
-                                                  'അക്ഷരം',
-                                                  style: TextStyle(
-                                                    fontFamily: e.key,
-                                                    fontSize: 18,
-                                                    height: 1.6,
-                                                    color: uiInk(context),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  e.value,
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: uiMuted(context),
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        );
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ]),
+                                  const SizedBox(height: 14),
+                                  appearanceGroup(context, [
+                                    menuLabel(context, 'Line spacing'),
+                                    const SizedBox(height: 10),
+                                    PillSegments<double>(
+                                      items: {
+                                        1.6: 'Tight',
+                                        1.9: 'Normal',
+                                        2.2: 'Wide',
                                       },
+                                      selected: [1.6, 1.9, 2.2].reduce(
+                                        (a, b) =>
+                                            (a - s.lineHeight).abs() <
+                                                (b - s.lineHeight).abs()
+                                            ? a
+                                            : b,
+                                      ),
+                                      onChanged: (v) => update(
+                                        context,
+                                        () => s.lineHeight = v,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  menuLabel(context, 'Line spacing'),
-                                  const SizedBox(height: 10),
-                                  PillSegments<double>(
-                                    items: {
-                                      1.6: 'Tight',
-                                      1.9: 'Normal',
-                                      2.2: 'Wide',
-                                    },
-                                    selected: [1.6, 1.9, 2.2].reduce(
-                                      (a, b) =>
-                                          (a - s.lineHeight).abs() <
-                                              (b - s.lineHeight).abs()
-                                          ? a
-                                          : b,
+                                    const SizedBox(height: 10),
+                                    iosSwitchRow(
+                                      'Verse numbers',
+                                      s.numbers,
+                                      (v) =>
+                                          update(context, () => s.numbers = v),
                                     ),
-                                    onChanged: (v) =>
-                                        update(context, () => s.lineHeight = v),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  iosSwitchRow(
-                                    'Verse numbers',
-                                    s.numbers,
-                                    (v) => update(context, () => s.numbers = v),
-                                  ),
+                                  ]),
                                 ],
                               ),
                             ),
@@ -767,3 +833,13 @@ class _PassageNumberGridState extends State<PassageNumberGrid> {
     },
   );
 }
+
+Widget appearanceGroup(BuildContext context, List<Widget> children) =>
+    GlassPanel(
+      radius: 22,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );

@@ -1,3 +1,11 @@
+# 2.3.1 appearance and reader polish
+
+- Reviewed updated Light/Dark Appearance and dark home screenshots.
+- Appearance backdrop and reader dock blur have explicit regression assertions.
+- Existing 41 tests cover preview updates, saved settings, scrolling controls,
+  navigation, reduced motion, compact screens and visual snapshots.
+- Release version incremented to 2.3.1+16; existing signing configuration retained.
+
 # Apple Music-inspired interface refresh
 
 - Existing theme accent values are unchanged. Featured reading cover, square plan

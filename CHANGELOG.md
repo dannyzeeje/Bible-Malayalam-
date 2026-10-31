@@ -1,3 +1,10 @@
+## 2.3.1
+
+- Restyled Appearance with grouped controls, a fixed live preview and a blurred, tap-to-dismiss backdrop.
+- Replaced the pale dark-mode Continue reading card with a subtle blue-charcoal surface and light text.
+- Matched the reader dock shape to the main navigation and reduced the bottom edge wash so backdrop blur remains visible.
+- Retained existing accent colours and reduced-motion support.
+
 # 2.3.0+15
 
 Consistent surfaces, blue theme colors, readable controls, responsive dock, integrated saved tags and simpler plan progress. Reader chrome repaint isolation, lazy tab mounting, indexed saved/search operations, reduced-motion support and 40 passing tests.

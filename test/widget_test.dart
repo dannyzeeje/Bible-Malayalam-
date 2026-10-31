@@ -1368,6 +1368,11 @@ void main() {
         .widgetList<BackdropFilter>(find.byType(BackdropFilter))
         .where((w) => w.enabled);
     expect(filters.length, 4);
+    final dock = tester.widget<FloatingGlass>(
+      find.byKey(const ValueKey('reader-bottom-glass')),
+    );
+    expect(dock.blur, isTrue);
+    expect(dock.radius, 28);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
   });
@@ -1393,6 +1398,10 @@ void main() {
       );
       await tester.tap(find.text('Open appearance'));
       await tester.pumpAndSettle();
+      final backdrop = tester.widget<BackdropFilter>(
+        find.byKey(const ValueKey('appearance-backdrop')),
+      );
+      expect(backdrop.enabled, isTrue);
       final preview = find.byKey(const ValueKey('typeface-preview'));
       final initial = tester.getRect(preview);
       final oldSize = s.fontSize;

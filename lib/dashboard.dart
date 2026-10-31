@@ -365,8 +365,19 @@ class ReadingFeature extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                uiAccent(context),
-                Color.lerp(uiAccent(context), toneOf(context).background, .28)!,
+                toneOf(context).mode == 2
+                    ? Color.alphaBlend(
+                        uiAccent(context).withValues(alpha: .18),
+                        toneOf(context).fill,
+                      )
+                    : uiAccent(context),
+                toneOf(context).mode == 2
+                    ? toneOf(context).panelA
+                    : Color.lerp(
+                        uiAccent(context),
+                        toneOf(context).background,
+                        .28,
+                      )!,
               ],
             ),
           ),
@@ -379,7 +390,9 @@ class ReadingFeature extends StatelessWidget {
                     child: Text(
                       'Continue reading',
                       style: TextStyle(
-                        color: uiOnAccent(context),
+                        color: (toneOf(context).mode == 2
+                            ? uiInk(context)
+                            : uiOnAccent(context)),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -388,7 +401,9 @@ class ReadingFeature extends StatelessWidget {
                   AppIcon(
                     CupertinoIcons.book,
                     size: 25,
-                    color: uiOnAccent(context),
+                    color: (toneOf(context).mode == 2
+                        ? uiInk(context)
+                        : uiOnAccent(context)),
                   ),
                 ],
               ),
@@ -400,13 +415,20 @@ class ReadingFeature extends StatelessWidget {
                   height: 1.12,
                   letterSpacing: -1,
                   fontWeight: FontWeight.w700,
-                  color: uiOnAccent(context),
+                  color: (toneOf(context).mode == 2
+                      ? uiInk(context)
+                      : uiOnAccent(context)),
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 'A moment in the Word.',
-                style: TextStyle(fontSize: 14, color: uiOnAccent(context)),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: (toneOf(context).mode == 2
+                      ? uiInk(context)
+                      : uiOnAccent(context)),
+                ),
               ),
               const SizedBox(height: 24),
               Row(
@@ -416,7 +438,9 @@ class ReadingFeature extends StatelessWidget {
                       'Pick up where you left off',
                       style: TextStyle(
                         fontSize: 12,
-                        color: uiOnAccent(context),
+                        color: (toneOf(context).mode == 2
+                            ? uiInk(context)
+                            : uiOnAccent(context)),
                       ),
                     ),
                   ),
@@ -425,12 +449,18 @@ class ReadingFeature extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: uiOnAccent(context).withValues(alpha: .15),
+                      color:
+                          (toneOf(context).mode == 2
+                                  ? uiInk(context)
+                                  : uiOnAccent(context))
+                              .withValues(alpha: .15),
                       shape: BoxShape.circle,
                     ),
                     child: AppIcon(
                       CupertinoIcons.arrow_right,
-                      color: uiOnAccent(context),
+                      color: (toneOf(context).mode == 2
+                          ? uiInk(context)
+                          : uiOnAccent(context)),
                       size: 21,
                     ),
                   ),

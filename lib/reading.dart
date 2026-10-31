@@ -566,7 +566,8 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                           padding: EdgeInsets.only(bottom: bottom + 12),
                           child: FloatingGlass(
                             blur: true,
-                            radius: 999,
+                            key: const ValueKey('reader-bottom-glass'),
+                            radius: 28,
                             dark: s.theme == 2,
                             padding: EdgeInsets.all(6),
                             child: bottomBar(),
@@ -605,7 +606,8 @@ class ReaderEdgeFade extends StatelessWidget {
             paper.withValues(alpha: .92),
             paper.withValues(alpha: 0),
             paper.withValues(alpha: 0),
-            paper.withValues(alpha: .92),
+            // Let the dock sample scripture rather than an opaque edge wash.
+            paper.withValues(alpha: .08),
           ],
           stops: [
             0,
