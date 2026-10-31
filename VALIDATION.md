@@ -1,3 +1,20 @@
+# Apple Music-inspired interface refresh
+
+- Existing theme accent values are unchanged. Featured reading cover, square plan
+  artwork, larger headings and a blurred floating tab bar refresh the interface.
+- Tab content uses paint-only fade/slide transitions; existing lazy tab loading,
+  retained search state and inactive ticker suppression are preserved.
+- Cover press feedback restores on pointer cancellation and honors reduced motion.
+- Flutter 3.47.7 is pinned in both workflows; dependency lock and visual snapshots
+  were refreshed for that SDK. Card content has its own transparent Material so
+  ListTile feedback paints above the card fill.
+- Static analysis passes. All 41 tests pass, including ordinary golden comparisons,
+  press cancellation, reduced motion, compact layouts and navigation regressions.
+- Light/dark dashboard and settings snapshots were visually reviewed. No physical
+  device frame-time profiling was performed; 60/120 fps is not yet measured.
+
+## Previous release validation (before this refresh)
+
 # Bible 2.3.0 validation
 
 - Signed ARM64 release built successfully: com.zeeje.word, 2.3.0+15, minimum SDK 24, target SDK 36.

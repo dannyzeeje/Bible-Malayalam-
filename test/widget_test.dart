@@ -1774,6 +1774,43 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('Cover press releases on cancel and respects reduced motion', (
+    tester,
+  ) async {
+    for (final reduced in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: reduced),
+            child: const Scaffold(
+              body: Center(
+                child: PressScale(
+                  child: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: ColoredBox(color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final target = find.byType(PressScale);
+      final before = tester.getRect(target);
+      final gesture = await tester.startGesture(tester.getCenter(target));
+      await tester.pumpAndSettle();
+      final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+      expect(scale.scale, reduced ? 1 : .975);
+      expect(tester.getRect(target), before);
+      if (reduced) expect(scale.duration, Duration.zero);
+      await gesture.cancel();
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('Main screens fit a compact phone with larger system text', (
     tester,
   ) async {

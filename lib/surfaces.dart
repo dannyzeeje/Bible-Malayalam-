@@ -74,7 +74,7 @@ class GlassPanel extends StatelessWidget {
                           ],
                   ),
           ),
-          child: child,
+          child: Material(type: MaterialType.transparency, child: child),
         ),
       ),
     );
@@ -145,8 +145,8 @@ Widget pageHeader(BuildContext context, String title, {Widget? trailing}) =>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.w600,
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
                 letterSpacing: -.6,
               ),
             ),

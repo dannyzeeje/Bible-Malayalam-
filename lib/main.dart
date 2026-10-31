@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter, FragmentProgram, FragmentShader;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'data.dart';
 
 part 'surfaces.dart';
@@ -171,13 +173,19 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   late final tabMotion = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 180),
+    duration: const Duration(milliseconds: 320),
     value: 1,
   );
   late final tabOpacity = tabMotion.drive(
     Tween<double>(
-      begin: .65,
+      begin: .35,
       end: 1,
+    ).chain(CurveTween(curve: Curves.easeOutCubic)),
+  );
+  late final tabOffset = tabMotion.drive(
+    Tween<Offset>(
+      begin: const Offset(0, .018),
+      end: Offset.zero,
     ).chain(CurveTween(curve: Curves.easeOutCubic)),
   );
   final visited = <int>{0};
@@ -224,19 +232,22 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           Positioned.fill(
             child: FadeTransition(
               opacity: tabOpacity,
-              child: IndexedStack(
-                index: tab,
-                children: [
-                  for (int i = 0; i < pages.length; i++)
-                    TickerMode(
-                      enabled: tab == i,
-                      child: !visited.contains(i)
-                          ? const SizedBox.shrink()
-                          : i < 2
-                          ? pages[i]
-                          : SafeArea(bottom: false, child: pages[i]),
-                    ),
-                ],
+              child: SlideTransition(
+                position: tabOffset,
+                child: IndexedStack(
+                  index: tab,
+                  children: [
+                    for (int i = 0; i < pages.length; i++)
+                      TickerMode(
+                        enabled: tab == i,
+                        child: !visited.contains(i)
+                            ? const SizedBox.shrink()
+                            : i < 2
+                            ? pages[i]
+                            : SafeArea(bottom: false, child: pages[i]),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -247,9 +258,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     ),
     bottomNavigationBar: SafeArea(
       top: false,
-      minimum: EdgeInsets.fromLTRB(22, 6, 22, 12),
+      minimum: EdgeInsets.fromLTRB(16, 6, 16, 12),
       child: FloatingGlass(
-        radius: 999,
+        blur: true,
+        radius: 28,
         padding: EdgeInsets.all(5),
         child: LayoutBuilder(
           builder: (context, c) => SizedBox(
@@ -262,7 +274,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 Positioned.fill(
                   child: AnimatedAlign(
                     alignment: Alignment(-1 + 2 * tab / 3, 0),
-                    duration: motionDuration(context, 220),
+                    duration: motionDuration(context, 340),
                     curve: Curves.easeOutCubic,
                     child: FractionallySizedBox(
                       widthFactor: .25,
