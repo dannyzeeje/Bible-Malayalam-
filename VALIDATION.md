@@ -1,3 +1,16 @@
+# 2.3.2 reference and Sthuthi styling
+
+- Appearance follows the supplied layout with a fixed, scrollable two-verse preview,
+  divided sections, size badge, theme circles and illustrated spacing controls.
+- Sthuthi-1.0.0-Flutter-Source.zip was inspected for shared design conventions:
+  warm white/charcoal neutrals, Inter headings, accent eyebrows, tinted feature
+  cards and rounded glass navigation. Bible accent values are retained.
+- Existing lazy tabs, inactive ticker suppression, reduced motion and paint-only
+  transitions remain in place. No physical-device frame-time profiling performed.
+- Analysis clean; 41 tests pass including visual comparisons, settings persistence,
+  compact layouts and motion regressions. Light/dark home previews reviewed.
+- Version 2.3.2+18. Changes must remain unmerged pending user confirmation.
+
 # 2.3.1 appearance and reader polish
 
 - Reviewed updated Light/Dark Appearance and dark home screenshots.

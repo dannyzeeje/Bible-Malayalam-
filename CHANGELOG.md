@@ -2,7 +2,7 @@
 
 - Reworked Appearance around the supplied reference: two-verse preview, flat divided sections, text-size badge, circular theme swatches and illustrated spacing options.
 - Preserved live preview updates, font selection, persistent settings and reduced-motion support.
-- Sthuthi-specific styling awaits reference screenshots from the separate ChatGPT conversation.
+- Adapted Sthuthi source styling: warm light/charcoal backgrounds, bold headings, accent eyebrows, tinted feature surfaces and rounded cards. Existing Bible accent colours retained.
 
 ## 2.3.1
 

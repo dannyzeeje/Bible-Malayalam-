@@ -361,24 +361,11 @@ class ReadingFeature extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                toneOf(context).mode == 2
-                    ? Color.alphaBlend(
-                        uiAccent(context).withValues(alpha: .18),
-                        toneOf(context).fill,
-                      )
-                    : uiAccent(context),
-                toneOf(context).mode == 2
-                    ? toneOf(context).panelA
-                    : Color.lerp(
-                        uiAccent(context),
-                        toneOf(context).background,
-                        .28,
-                      )!,
-              ],
+            color: Color.alphaBlend(
+              uiAccent(
+                context,
+              ).withValues(alpha: toneOf(context).mode == 2 ? .16 : .09),
+              toneOf(context).background,
             ),
           ),
           child: Column(
@@ -390,9 +377,7 @@ class ReadingFeature extends StatelessWidget {
                     child: Text(
                       'Continue reading',
                       style: TextStyle(
-                        color: (toneOf(context).mode == 2
-                            ? uiInk(context)
-                            : uiOnAccent(context)),
+                        color: uiInk(context),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -400,10 +385,8 @@ class ReadingFeature extends StatelessWidget {
                   ),
                   AppIcon(
                     CupertinoIcons.book,
-                    size: 25,
-                    color: (toneOf(context).mode == 2
-                        ? uiInk(context)
-                        : uiOnAccent(context)),
+                    size: 32,
+                    color: uiAccent(context),
                   ),
                 ],
               ),
@@ -415,20 +398,13 @@ class ReadingFeature extends StatelessWidget {
                   height: 1.12,
                   letterSpacing: -1,
                   fontWeight: FontWeight.w700,
-                  color: (toneOf(context).mode == 2
-                      ? uiInk(context)
-                      : uiOnAccent(context)),
+                  color: uiInk(context),
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 'A moment in the Word.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: (toneOf(context).mode == 2
-                      ? uiInk(context)
-                      : uiOnAccent(context)),
-                ),
+                style: TextStyle(fontSize: 14, color: uiInk(context)),
               ),
               const SizedBox(height: 24),
               Row(
@@ -436,12 +412,7 @@ class ReadingFeature extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Pick up where you left off',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: (toneOf(context).mode == 2
-                            ? uiInk(context)
-                            : uiOnAccent(context)),
-                      ),
+                      style: TextStyle(fontSize: 12, color: uiInk(context)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -449,18 +420,12 @@ class ReadingFeature extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color:
-                          (toneOf(context).mode == 2
-                                  ? uiInk(context)
-                                  : uiOnAccent(context))
-                              .withValues(alpha: .15),
+                      color: uiInk(context).withValues(alpha: .15),
                       shape: BoxShape.circle,
                     ),
                     child: AppIcon(
                       CupertinoIcons.arrow_right,
-                      color: (toneOf(context).mode == 2
-                          ? uiInk(context)
-                          : uiOnAccent(context)),
+                      color: uiInk(context),
                       size: 21,
                     ),
                   ),

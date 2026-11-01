@@ -114,9 +114,9 @@ Widget heading(String t, {double size = 32, Color? color}) => Builder(
     style: TextStyle(
       fontFamily: 'Inter',
       fontSize: size,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w800,
       color: color ?? uiInk(context),
-      letterSpacing: -.7,
+      letterSpacing: size >= 30 ? -1.3 : -.4,
     ),
   ),
 );
@@ -124,10 +124,10 @@ Widget eyebrow(String t) => Builder(
   builder: (context) => Text(
     t,
     style: TextStyle(
-      fontSize: 10,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 1.4,
-      color: uiMuted(context),
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.8,
+      color: uiAccent(context),
     ),
   ),
 );

@@ -20,7 +20,7 @@ class GlassPanel extends StatelessWidget {
   const GlassPanel({
     super.key,
     required this.child,
-    this.radius = 24,
+    this.radius = 28,
     this.padding = EdgeInsets.zero,
     this.dark,
     this.translucent = false,
