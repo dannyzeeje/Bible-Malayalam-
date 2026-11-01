@@ -1,3 +1,9 @@
+## 2.3.2
+
+- Reworked Appearance around the supplied reference: two-verse preview, flat divided sections, text-size badge, circular theme swatches and illustrated spacing options.
+- Preserved live preview updates, font selection, persistent settings and reduced-motion support.
+- Sthuthi-specific styling awaits reference screenshots from the separate ChatGPT conversation.
+
 ## 2.3.1
 
 - Restyled Appearance with grouped controls, a fixed live preview and a blurred, tap-to-dismiss backdrop.

@@ -53,7 +53,6 @@ Future<void> appearance(BuildContext context, BibleStore s) =>
 class ReadingAppearance extends StatelessWidget {
   final BibleStore store;
   const ReadingAppearance({super.key, required this.store});
-
   void update(
     BuildContext context,
     VoidCallback change, {
@@ -72,315 +71,480 @@ class ReadingAppearance extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final s = store;
-          final sample = s.byId['PSA.23.1']?.text ?? s.current.first.text;
+          final panel = Color.alphaBlend(
+            toneOf(context).panelA,
+            toneOf(context).background,
+          );
+          Widget divider() => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(color: uiInk(context).withValues(alpha: .07)),
+          );
           return LayoutBuilder(
-            builder: (context, box) {
-              return Column(
-                children: [
-                  // This preview sits outside the scrolling control panel.
-                  Container(
-                    key: const ValueKey('typeface-preview'),
-                    height: (box.maxHeight * .27).clamp(130.0, 210.0),
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      color: Color.alphaBlend(
-                        toneOf(context).panelA,
-                        toneOf(context).background,
+            builder: (context, box) => Column(
+              children: [
+                Container(
+                  key: const ValueKey('typeface-preview'),
+                  height: (box.maxHeight * .34).clamp(155.0, 290.0),
+                  margin: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: panel,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .04),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
-                      border: Border.all(
-                        color: uiAccent(context).withValues(alpha: .18),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      eyebrow('PREVIEW'),
+                      const SizedBox(height: 10),
+                      Text(
+                        'സങ്കീർത്തനങ്ങൾ 23',
+                        style: TextStyle(
+                          fontFamily: s.fontFamily,
+                          fontSize: 20,
+                          color: uiInk(context),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: ClipRect(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'സങ്കീർത്തനങ്ങൾ 23',
-                            style: TextStyle(
-                              fontFamily: s.fontFamily,
-                              fontSize: 13,
-                              height: 1.6,
-                              color: uiMuted(context),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: ClipRect(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                for (final n in ['1', '2'])
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (s.numbers) ...[
+                                          Text(
+                                            n,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              height: 2.2,
+                                              color: uiMuted(context),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                        ],
+                                        Expanded(
+                                          child: Text(
+                                            s.byId['PSA.23.$n']?.text ?? '',
+                                            key: n == '1'
+                                                ? const ValueKey(
+                                                    'live-preview-text',
+                                                  )
+                                                : null,
+                                            style: TextStyle(
+                                              fontFamily: s.fontFamily,
+                                              fontSize: s.fontSize,
+                                              height: s.lineHeight,
+                                              color: uiInk(context),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Material(
+                    color: panel,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(28),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          sheetGrip(context),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(22, 6, 16, 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: heading('Appearance', size: 25),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Done'),
+                                ),
+                              ],
+                            ),
+                          ),
                           Expanded(
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Text.rich(
-                                key: const ValueKey('live-preview-text'),
-                                TextSpan(
+                            child: ListView(
+                              key: const ValueKey('appearance-controls'),
+                              padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
+                              children: [
+                                menuLabel(context, 'Text size'),
+                                const SizedBox(height: 6),
+                                Row(
                                   children: [
-                                    if (s.numbers)
-                                      TextSpan(
-                                        text: '1  ',
+                                    IconButton(
+                                      tooltip: 'Decrease text size',
+                                      onPressed: s.fontSize > 16
+                                          ? () => update(
+                                              context,
+                                              () => s.fontSize--,
+                                            )
+                                          : null,
+                                      icon: const Text(
+                                        'A',
+                                        style: TextStyle(fontSize: 13),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: CupertinoSlider(
+                                        key: const ValueKey('text-size-slider'),
+                                        min: 16,
+                                        max: 34,
+                                        divisions: 18,
+                                        activeColor: uiAccent(context),
+                                        value: s.fontSize.clamp(16, 34),
+                                        onChanged: (v) => update(
+                                          context,
+                                          () => s.fontSize = v,
+                                          persist: false,
+                                        ),
+                                        onChangeEnd: (_) => save(context, s),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Increase text size',
+                                      onPressed: s.fontSize < 34
+                                          ? () => update(
+                                              context,
+                                              () => s.fontSize++,
+                                            )
+                                          : null,
+                                      icon: const Text(
+                                        'A',
+                                        style: TextStyle(fontSize: 23),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: uiFill(
+                                          context,
+                                        ).withValues(alpha: .5),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        '${s.fontSize.round()}',
                                         style: TextStyle(
-                                          fontSize: 11,
-                                          color: uiMuted(context),
+                                          fontWeight: FontWeight.w600,
+                                          color: uiInk(context),
                                         ),
                                       ),
-                                    TextSpan(text: sample),
+                                    ),
                                   ],
                                 ),
-                                maxLines: 4,
-                                overflow: TextOverflow.fade,
-                                style: TextStyle(
-                                  fontFamily: s.fontFamily,
-                                  fontSize: s.fontSize,
-                                  height: s.lineHeight,
-                                  color: uiInk(context),
+                                divider(),
+                                menuLabel(context, 'Theme'),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    for (int i = 0; i < 3; i++)
+                                      Semantics(
+                                        selected: s.theme == i,
+                                        button: true,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                          onTap: () => update(
+                                            context,
+                                            () => s.theme = i,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 4,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                AnimatedContainer(
+                                                  duration: motionDuration(
+                                                    context,
+                                                    200,
+                                                  ),
+                                                  width: 44,
+                                                  height: 44,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: [
+                                                      const Color(0xfffdfdfd),
+                                                      const Color(0xfff4eddf),
+                                                      const Color(0xff252525),
+                                                    ][i],
+                                                    border: Border.all(
+                                                      color: s.theme == i
+                                                          ? uiAccent(context)
+                                                          : uiMuted(
+                                                              context,
+                                                            ).withValues(
+                                                              alpha: .12,
+                                                            ),
+                                                      width: s.theme == i
+                                                          ? 2
+                                                          : 1,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 7),
+                                                Text(
+                                                  ['Light', 'Paper', 'Dark'][i],
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: uiInk(context),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ),
+                                divider(),
+                                menuLabel(context, 'Typeface'),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  height: 76,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: readingFonts.length,
+                                    separatorBuilder: (_, _) =>
+                                        const SizedBox(width: 8),
+                                    itemBuilder: (context, i) {
+                                      final e = readingFonts.entries.elementAt(
+                                        i,
+                                      );
+                                      return Semantics(
+                                        selected: s.fontFamily == e.key,
+                                        button: true,
+                                        child: InkWell(
+                                          key: ValueKey('font-${e.key}'),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          onTap: () => update(
+                                            context,
+                                            () => s.fontFamily = e.key,
+                                          ),
+                                          child: AnimatedContainer(
+                                            duration: motionDuration(
+                                              context,
+                                              180,
+                                            ),
+                                            width: 106,
+                                            padding: const EdgeInsets.all(9),
+                                            decoration: BoxDecoration(
+                                              color: s.fontFamily == e.key
+                                                  ? uiAccent(
+                                                      context,
+                                                    ).withValues(alpha: .08)
+                                                  : uiFill(
+                                                      context,
+                                                    ).withValues(alpha: .4),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              border: Border.all(
+                                                color: s.fontFamily == e.key
+                                                    ? uiAccent(context)
+                                                    : Colors.transparent,
+                                              ),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                  'അക്ഷരം',
+                                                  style: TextStyle(
+                                                    fontFamily: e.key,
+                                                    fontSize: 18,
+                                                    color: uiInk(context),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  e.value,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: uiMuted(context),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                divider(),
+                                menuLabel(context, 'Line spacing'),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    for (int i = 0; i < 3; i++)
+                                      Expanded(
+                                        child: Semantics(
+                                          selected:
+                                              (s.lineHeight -
+                                                      [1.6, 1.9, 2.2][i])
+                                                  .abs() <
+                                              .1,
+                                          button: true,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            onTap: () => update(
+                                              context,
+                                              () => s.lineHeight = [
+                                                1.6,
+                                                1.9,
+                                                2.2,
+                                              ][i],
+                                            ),
+                                            child: Padding(
+                                              padding: EdgeInsets.only(
+                                                right: i == 2 ? 0 : 6,
+                                              ),
+                                              child: Column(
+                                                children: [
+                                                  AnimatedContainer(
+                                                    duration: motionDuration(
+                                                      context,
+                                                      180,
+                                                    ),
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          (s.lineHeight -
+                                                                      [
+                                                                        1.6,
+                                                                        1.9,
+                                                                        2.2,
+                                                                      ][i])
+                                                                  .abs() <
+                                                              .1
+                                                          ? uiAccent(
+                                                              context,
+                                                            ).withValues(
+                                                              alpha: .12,
+                                                            )
+                                                          : uiFill(
+                                                              context,
+                                                            ).withValues(
+                                                              alpha: .4,
+                                                            ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                    child: Center(
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          for (
+                                                            int j = 0;
+                                                            j < 3;
+                                                            j++
+                                                          )
+                                                            Container(
+                                                              width: j == 1
+                                                                  ? 17
+                                                                  : 23,
+                                                              height: 1.5,
+                                                              margin:
+                                                                  EdgeInsets.symmetric(
+                                                                    vertical:
+                                                                        1.5 +
+                                                                        i * 1.4,
+                                                                  ),
+                                                              color:
+                                                                  (s.lineHeight -
+                                                                              [
+                                                                                1.6,
+                                                                                1.9,
+                                                                                2.2,
+                                                                              ][i])
+                                                                          .abs() <
+                                                                      .1
+                                                                  ? uiAccent(
+                                                                      context,
+                                                                    )
+                                                                  : uiMuted(
+                                                                      context,
+                                                                    ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    [
+                                                      'Compact',
+                                                      'Normal',
+                                                      'Spacious',
+                                                    ][i],
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: uiInk(context),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                iosSwitchRow(
+                                  'Verse numbers',
+                                  s.numbers,
+                                  (v) => update(context, () => s.numbers = v),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Material(
-                      color: toneOf(context).background,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(30),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: SafeArea(
-                        top: false,
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 10),
-                            sheetGrip(context),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(22, 8, 12, 8),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: heading('Appearance', size: 27),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Done'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: ListView(
-                                key: const ValueKey('appearance-controls'),
-                                padding: const EdgeInsets.fromLTRB(
-                                  22,
-                                  0,
-                                  22,
-                                  20,
-                                ),
-                                children: [
-                                  appearanceGroup(context, [
-                                    Row(
-                                      children: [
-                                        menuLabel(context, 'Text size'),
-                                        const Spacer(),
-                                        Text(
-                                          '${s.fontSize.round()} pt',
-                                          style: TextStyle(
-                                            color: uiAccent(context),
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          tooltip: 'Decrease text size',
-                                          icon: const Icon(
-                                            CupertinoIcons.minus,
-                                            size: 18,
-                                          ),
-                                          onPressed: s.fontSize > 16
-                                              ? () => update(
-                                                  context,
-                                                  () => s.fontSize =
-                                                      (s.fontSize - 1).clamp(
-                                                        16,
-                                                        34,
-                                                      ),
-                                                )
-                                              : null,
-                                        ),
-                                        Expanded(
-                                          child: CupertinoSlider(
-                                            key: const ValueKey(
-                                              'text-size-slider',
-                                            ),
-                                            min: 16,
-                                            max: 34,
-                                            divisions: 18,
-                                            activeColor: uiAccent(context),
-                                            value: s.fontSize.clamp(16, 34),
-                                            onChanged: (v) => update(
-                                              context,
-                                              () => s.fontSize = v,
-                                              persist: false,
-                                            ),
-                                            onChangeEnd: (_) =>
-                                                save(context, s),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          tooltip: 'Increase text size',
-                                          icon: const Icon(
-                                            CupertinoIcons.plus,
-                                            size: 18,
-                                          ),
-                                          onPressed: s.fontSize < 34
-                                              ? () => update(
-                                                  context,
-                                                  () => s.fontSize =
-                                                      (s.fontSize + 1).clamp(
-                                                        16,
-                                                        34,
-                                                      ),
-                                                )
-                                              : null,
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ]),
-                                  const SizedBox(height: 14),
-                                  appearanceGroup(context, [
-                                    menuLabel(context, 'Theme'),
-                                    const SizedBox(height: 10),
-                                    PillSegments<int>(
-                                      items: const {
-                                        0: 'Light',
-                                        1: 'Paper',
-                                        2: 'Dark',
-                                      },
-                                      selected: s.theme,
-                                      onChanged: (v) =>
-                                          update(context, () => s.theme = v),
-                                    ),
-                                    const SizedBox(height: 20),
-                                  ]),
-                                  const SizedBox(height: 14),
-                                  appearanceGroup(context, [
-                                    menuLabel(context, 'Typeface'),
-                                    const SizedBox(height: 10),
-                                    SizedBox(
-                                      height: 90,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: readingFonts.length,
-                                        separatorBuilder: (_, _) =>
-                                            const SizedBox(width: 8),
-                                        itemBuilder: (context, i) {
-                                          final e = readingFonts.entries
-                                              .elementAt(i);
-                                          return InkWell(
-                                            key: ValueKey('font-${e.key}'),
-                                            borderRadius: BorderRadius.circular(
-                                              18,
-                                            ),
-                                            onTap: () => update(
-                                              context,
-                                              () => s.fontFamily = e.key,
-                                            ),
-                                            child: Container(
-                                              width: 120,
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                color: s.fontFamily == e.key
-                                                    ? uiAccent(
-                                                        context,
-                                                      ).withValues(alpha: .12)
-                                                    : uiFill(
-                                                        context,
-                                                      ).withValues(alpha: .5),
-                                                borderRadius:
-                                                    BorderRadius.circular(18),
-                                                border: Border.all(
-                                                  width: 1.5,
-                                                  color: s.fontFamily == e.key
-                                                      ? uiAccent(context)
-                                                      : Colors.transparent,
-                                                ),
-                                              ),
-                                              child: Column(
-                                                children: [
-                                                  Text(
-                                                    'അക്ഷരം',
-                                                    style: TextStyle(
-                                                      fontFamily: e.key,
-                                                      fontSize: 18,
-                                                      height: 1.6,
-                                                      color: uiInk(context),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    e.value,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: uiMuted(context),
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                  ]),
-                                  const SizedBox(height: 14),
-                                  appearanceGroup(context, [
-                                    menuLabel(context, 'Line spacing'),
-                                    const SizedBox(height: 10),
-                                    PillSegments<double>(
-                                      items: {
-                                        1.6: 'Tight',
-                                        1.9: 'Normal',
-                                        2.2: 'Wide',
-                                      },
-                                      selected: [1.6, 1.9, 2.2].reduce(
-                                        (a, b) =>
-                                            (a - s.lineHeight).abs() <
-                                                (b - s.lineHeight).abs()
-                                            ? a
-                                            : b,
-                                      ),
-                                      onChanged: (v) => update(
-                                        context,
-                                        () => s.lineHeight = v,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    iosSwitchRow(
-                                      'Verse numbers',
-                                      s.numbers,
-                                      (v) =>
-                                          update(context, () => s.numbers = v),
-                                    ),
-                                  ]),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+                ),
+              ],
+            ),
           );
         },
       ),
