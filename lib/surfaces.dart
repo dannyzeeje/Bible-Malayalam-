@@ -20,7 +20,7 @@ class GlassPanel extends StatelessWidget {
   const GlassPanel({
     super.key,
     required this.child,
-    this.radius = 24,
+    this.radius = 28,
     this.padding = EdgeInsets.zero,
     this.dark,
     this.translucent = false,
@@ -74,7 +74,7 @@ class GlassPanel extends StatelessWidget {
                           ],
                   ),
           ),
-          child: child,
+          child: Material(type: MaterialType.transparency, child: child),
         ),
       ),
     );
@@ -145,8 +145,8 @@ Widget pageHeader(BuildContext context, String title, {Widget? trailing}) =>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.w600,
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
                 letterSpacing: -.6,
               ),
             ),
@@ -432,7 +432,32 @@ class SettingsPage extends StatelessWidget {
                           ),
                         ),
                       ]),
+                      settingsGroup(context, 'Saved data', [
+                        settingsRow(
+                          context,
+                          CupertinoIcons.tag,
+                          'Manage tags',
+                          onTap: () => manageTags(context, s),
+                        ),
+                        settingsRow(
+                          context,
+                          CupertinoIcons.square_arrow_up,
+                          'Back up saved data',
+                          onTap: () => backupData(context, s, false),
+                        ),
+                        settingsRow(
+                          context,
+                          CupertinoIcons.square_arrow_down,
+                          'Restore saved data',
+                          onTap: () => backupData(context, s, true),
+                        ),
+                      ]),
                       settingsGroup(context, 'General', [
+                        iosSwitchRow(
+                          'Book names in Malayalam',
+                          s.malayalamNames,
+                          (v) => update(() => s.malayalamNames = v),
+                        ),
                         iosSwitchRow(
                           'Selection haptics',
                           s.haptics,
@@ -575,3 +600,165 @@ Widget iosSwitchRow(String title, bool value, ValueChanged<bool> callback) =>
         ),
       ),
     );
+
+Future<void> backupData(
+  BuildContext context,
+  BibleStore s,
+  bool restore,
+) async {
+  try {
+    if (restore) {
+      final source = await BibleStore.storage.invokeMethod<String>(
+        'importBackup',
+      );
+      if (source == null || !context.mounted) return;
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Restore saved data?'),
+          content: const Text(
+            'Merge bookmarks, highlights, notes and tags from this backup. Matching entries will use the backup version. Other saved entries stay on this device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Restore'),
+            ),
+          ],
+        ),
+      );
+      if (approved != true) return;
+      await s.restoreBackup(source);
+    } else {
+      final done = await BibleStore.storage.invokeMethod<bool>(
+        'exportBackup',
+        s.exportBackup(),
+      );
+      if (done != true) return;
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(restore ? 'Saved data restored' : 'Backup saved'),
+        ),
+      );
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to complete backup or restore. Choose a valid Bible backup file and try again.',
+          ),
+        ),
+      );
+    }
+  }
+}
+
+Future<void> manageTags(
+  BuildContext context,
+  BibleStore s,
+) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  builder: (sheet) => ListenableBuilder(
+    listenable: s,
+    builder: (context, _) => SizedBox(
+      height: MediaQuery.sizeOf(context).height * .65,
+      child: SheetShell(
+        title: 'Manage tags',
+        child: Expanded(
+          child: s.knownTags.isEmpty
+              ? const Center(
+                  child: Text('No tags yet. Add tags to a saved verse.'),
+                )
+              : ListView(
+                  children: [
+                    for (final tag in s.knownTags)
+                      ListTile(
+                        title: Text(tag),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Rename $tag',
+                              icon: const Icon(CupertinoIcons.pencil),
+                              onPressed: () async {
+                                var edited = tag;
+                                final name = await showDialog<String>(
+                                  context: context,
+                                  builder: (dialog) => AlertDialog(
+                                    title: const Text('Rename tag'),
+                                    content: TextFormField(
+                                      initialValue: tag,
+                                      onChanged: (v) => edited = v,
+                                      maxLength: 32,
+                                      autofocus: true,
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialog),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialog, edited),
+                                        child: const Text('Save'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (name != null &&
+                                    name.trim().isNotEmpty &&
+                                    context.mounted) {
+                                  s.renameTag(tag, name);
+                                  await save(context, s);
+                                }
+                              },
+                            ),
+                            IconButton(
+                              tooltip: 'Delete $tag',
+                              icon: const Icon(CupertinoIcons.trash),
+                              onPressed: () async {
+                                final yes = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialog) => AlertDialog(
+                                    title: const Text('Delete tag?'),
+                                    content: Text(
+                                      'Remove “$tag” from all bookmarks? Your bookmarks will stay saved.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialog),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialog, true),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (yes == true && context.mounted) {
+                                  s.deleteTag(tag);
+                                  await save(context, s);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    ),
+  ),
+);

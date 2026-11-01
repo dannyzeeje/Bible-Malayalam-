@@ -1,0 +1,37 @@
+name: Attach verified APK to release
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful signed APK workflow run ID
+        required: true
+      tag:
+        description: Existing GitHub release tag
+        required: true
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check that the source build succeeded
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPOSITORY/actions/runs/$RUN_ID" --jq '.conclusion' | grep -qx success
+      - uses: actions/download-artifact@v4
+        with:
+          name: Malayalam-Bible-universal-release-APK
+          path: apk
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Attach APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: gh release upload "$RELEASE_TAG" apk/app-release.apk --repo "$REPOSITORY"

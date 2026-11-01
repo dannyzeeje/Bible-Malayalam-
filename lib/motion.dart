@@ -158,3 +158,31 @@ Widget sheetGrip(BuildContext context) => Semantics(
     ),
   ),
 );
+
+/// Paint-only press feedback; the child's layout and tap semantics stay intact.
+class PressScale extends StatefulWidget {
+  final Widget child;
+  const PressScale({super.key, required this.child});
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  bool pressed = false;
+  void update(bool value) {
+    if (pressed != value) setState(() => pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => update(true),
+    onPointerUp: (_) => update(false),
+    onPointerCancel: (_) => update(false),
+    child: AnimatedScale(
+      scale: pressed && !MediaQuery.disableAnimationsOf(context) ? .975 : 1,
+      duration: motionDuration(context, pressed ? 100 : 320),
+      curve: Curves.easeOutCubic,
+      child: widget.child,
+    ),
+  );
+}

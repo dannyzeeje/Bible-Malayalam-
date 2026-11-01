@@ -44,7 +44,7 @@ AppTone toneOf(BuildContext context) =>
     Theme.of(context).extension<AppTone>() ??
     const AppTone(
       0,
-      Color(0xfff3f2ee),
+      Color(0xfffaf9f6),
       Color(0xffeae9e4),
       Color(0xe8ffffff),
       Color(0xb9ffffff),
@@ -62,10 +62,10 @@ final _themeCache = <int, ThemeData>{};
 ThemeData appTheme(int mode) => _themeCache.putIfAbsent(mode, () {
   final dark = mode == 2;
   final bg = dark
-      ? const Color(0xff080808)
+      ? const Color(0xff111113)
       : mode == 1
       ? const Color(0xfff4eddf)
-      : const Color(0xfff3f2ee);
+      : const Color(0xfffaf9f6);
   final primary = mode == 1
       ? const Color(0xff806b4b)
       : dark

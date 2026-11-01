@@ -1,3 +1,51 @@
+# 2.3.3 reader and saved-data improvements
+
+- Passage selection opens at full height and navigates on verse selection.
+- Annotation backup tests cover merge/round-trip, malformed input rejection, tags,
+  highlight colours and note ranges. Bilingual search and label persistence verified.
+- Backups restore annotations by merging; matching entries take the backup value.
+  Settings and reading plans are exported for reference but are not overwritten on restore.
+- Android file-picker and signed APK compilation are verified by the release workflow;
+  physical-device file-provider interaction and GPU profiling require device testing.
+
+# 2.3.2 reference and Sthuthi styling
+
+- Appearance follows the supplied layout with a fixed, scrollable two-verse preview,
+  divided sections, size badge, theme circles and illustrated spacing controls.
+- Sthuthi-1.0.0-Flutter-Source.zip was inspected for shared design conventions:
+  warm white/charcoal neutrals, Inter headings, accent eyebrows, tinted feature
+  cards and rounded glass navigation. Bible accent values are retained.
+- Existing lazy tabs, inactive ticker suppression, reduced motion and paint-only
+  transitions remain in place. No physical-device frame-time profiling performed.
+- Analysis clean; 41 tests pass including visual comparisons, settings persistence,
+  compact layouts and motion regressions. Light/dark home previews reviewed.
+- Version 2.3.2+18. Changes must remain unmerged pending user confirmation.
+
+# 2.3.1 appearance and reader polish
+
+- Reviewed updated Light/Dark Appearance and dark home screenshots.
+- Appearance backdrop and reader dock blur have explicit regression assertions.
+- Existing 41 tests cover preview updates, saved settings, scrolling controls,
+  navigation, reduced motion, compact screens and visual snapshots.
+- Release version incremented to 2.3.1+16; existing signing configuration retained.
+
+# Apple Music-inspired interface refresh
+
+- Existing theme accent values are unchanged. Featured reading cover, square plan
+  artwork, larger headings and a blurred floating tab bar refresh the interface.
+- Tab content uses paint-only fade/slide transitions; existing lazy tab loading,
+  retained search state and inactive ticker suppression are preserved.
+- Cover press feedback restores on pointer cancellation and honors reduced motion.
+- Flutter 3.47.7 is pinned in both workflows; dependency lock and visual snapshots
+  were refreshed for that SDK. Card content has its own transparent Material so
+  ListTile feedback paints above the card fill.
+- Static analysis passes. All 41 tests pass, including ordinary golden comparisons,
+  press cancellation, reduced motion, compact layouts and navigation regressions.
+- Light/dark dashboard and settings snapshots were visually reviewed. No physical
+  device frame-time profiling was performed; 60/120 fps is not yet measured.
+
+## Previous release validation (before this refresh)
+
 # Bible 2.3.0 validation
 
 - Signed ARM64 release built successfully: com.zeeje.word, 2.3.0+15, minimum SDK 24, target SDK 36.

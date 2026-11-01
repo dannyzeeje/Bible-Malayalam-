@@ -1,3 +1,24 @@
+## 2.3.3
+
+- Passage picker opens fully expanded; choose a book, chapter and verse to navigate immediately.
+- Optional Malayalam book labels retain English and Malayalam search matching.
+- Fixed Appearance transition blur composition and highlight geometry; added wax-grain texture.
+- Rounded saved-verse sorting menu and settings for renaming/deleting tags.
+- Export/import annotation backups through Android's document picker, with validation and merge semantics.
+
+## 2.3.2
+
+- Reworked Appearance around the supplied reference: two-verse preview, flat divided sections, text-size badge, circular theme swatches and illustrated spacing options.
+- Preserved live preview updates, font selection, persistent settings and reduced-motion support.
+- Adapted Sthuthi source styling: warm light/charcoal backgrounds, bold headings, accent eyebrows, tinted feature surfaces and rounded cards. Existing Bible accent colours retained.
+
+## 2.3.1
+
+- Restyled Appearance with grouped controls, a fixed live preview and a blurred, tap-to-dismiss backdrop.
+- Replaced the pale dark-mode Continue reading card with a subtle blue-charcoal surface and light text.
+- Matched the reader dock shape to the main navigation and reduced the bottom edge wash so backdrop blur remains visible.
+- Retained existing accent colours and reduced-motion support.
+
 # 2.3.0+15
 
 Consistent surfaces, blue theme colors, readable controls, responsive dock, integrated saved tags and simpler plan progress. Reader chrome repaint isolation, lazy tab mounting, indexed saved/search operations, reduced-motion support and 40 passing tests.

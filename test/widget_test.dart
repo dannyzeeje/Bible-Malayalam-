@@ -117,6 +117,57 @@ void main() {
       expect(restored.notes['JOH.3.16'], 'Existing note');
     },
   );
+  test(
+    'Backup round trip merges annotations; malformed files preserve data',
+    () async {
+      final source = BibleStore();
+      await source.load();
+      source.bookmarks.add('JOH.3.16');
+      source.highlights.add('PSA.23.1');
+      source.highlightColors['PSA.23.1'] = 2;
+      source.notes['JOH.3.16'] = 'A note';
+      source.noteRanges['JOH.3.16'] = ['JOH.3.16'];
+      source.tagBookmarks(['JOH.3.16'], ['Hope']);
+      final backup = source.exportBackup();
+      final target = BibleStore();
+      await target.load();
+      target.bookmarks.add('GEN.1.1');
+      await target.restoreBackup(backup);
+      expect(target.bookmarks, containsAll(['GEN.1.1', 'JOH.3.16']));
+      expect(target.notes['JOH.3.16'], 'A note');
+      expect(target.highlightColors['PSA.23.1'], 2);
+      expect(target.bookmarkTags['JOH.3.16'], ['Hope']);
+      target.renameTag('Hope', 'Faith');
+      expect(target.bookmarkTags['JOH.3.16'], ['Faith']);
+      target.deleteTag('Faith');
+      expect(target.knownTags, isEmpty);
+      final before = target.exportBackup();
+      await expectLater(
+        target.restoreBackup('{"format":"wrong"}'),
+        throwsFormatException,
+      );
+      final damaged = jsonDecode(backup);
+      damaged['data']['notes'] = '{"BAD":"x"}';
+      await expectLater(
+        target.restoreBackup(jsonEncode(damaged)),
+        throwsFormatException,
+      );
+      expect(target.exportBackup(), before);
+      target.malayalamNames = true;
+      await target.persist();
+      final restored = BibleStore();
+      await restored.load();
+      expect(restored.malayalamNames, isTrue);
+      expect(restored.bookLabel('JOH'), malayalamBooks['JOH']);
+      expect(restored.search('John 3:16').single.id, 'JOH.3.16');
+      expect(restored.search('John').first.book, 'JOH');
+      expect(
+        restored.search('${malayalamBooks['JOH']} 3:16').single.id,
+        'JOH.3.16',
+      );
+    },
+  );
+
   testWidgets('English library, search and reader navigation', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
@@ -300,15 +351,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('chapter-3')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('verse-16')));
-      await tester.pumpAndSettle();
-      expect(find.text('Open John 3:16'), findsOneWidget);
       await expectLater(
         find.byKey(const ValueKey('capture')),
         matchesGoldenFile('screens/passage-picker.png'),
       );
-      await tester.tap(find.text('Open John 3:16'));
+      await tester.tap(find.byKey(const ValueKey('verse-16')));
       await tester.pumpAndSettle();
+      expect(find.byType(PassageSheet), findsNothing);
+
       expect(s.book, 'JOH');
       expect(s.chapter, 3);
       expect(s.verse, '16');
@@ -1045,7 +1095,7 @@ void main() {
     expect(find.byTooltip('Close'), findsNothing);
     await tester.drag(find.text('Passage'), const Offset(0, -250));
     await tester.pumpAndSettle();
-    expect(tester.getSize(sheet).height, greaterThan(before + 120));
+    expect(tester.getSize(sheet).height, closeTo(before, 1));
     await expectLater(
       find.byType(PassageSheet),
       matchesGoldenFile('screens/passage-expanded.png'),
@@ -1368,6 +1418,11 @@ void main() {
         .widgetList<BackdropFilter>(find.byType(BackdropFilter))
         .where((w) => w.enabled);
     expect(filters.length, 4);
+    final dock = tester.widget<FloatingGlass>(
+      find.byKey(const ValueKey('reader-bottom-glass')),
+    );
+    expect(dock.blur, isTrue);
+    expect(dock.radius, 28);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
   });
@@ -1393,6 +1448,10 @@ void main() {
       );
       await tester.tap(find.text('Open appearance'));
       await tester.pumpAndSettle();
+      final backdrop = tester.widget<BackdropFilter>(
+        find.byKey(const ValueKey('appearance-backdrop')),
+      );
+      expect(backdrop.enabled, isTrue);
       final preview = find.byKey(const ValueKey('typeface-preview'));
       final initial = tester.getRect(preview);
       final oldSize = s.fontSize;
@@ -1772,6 +1831,43 @@ void main() {
       Duration.zero,
     );
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Cover press releases on cancel and respects reduced motion', (
+    tester,
+  ) async {
+    for (final reduced in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: reduced),
+            child: const Scaffold(
+              body: Center(
+                child: PressScale(
+                  child: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: ColoredBox(color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final target = find.byType(PressScale);
+      final before = tester.getRect(target);
+      final gesture = await tester.startGesture(tester.getCenter(target));
+      await tester.pumpAndSettle();
+      final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+      expect(scale.scale, reduced ? 1 : .975);
+      expect(tester.getRect(target), before);
+      if (reduced) expect(scale.duration, Duration.zero);
+      await gesture.cancel();
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
+      expect(tester.takeException(), isNull);
+    }
   });
 
   testWidgets('Main screens fit a compact phone with larger system text', (

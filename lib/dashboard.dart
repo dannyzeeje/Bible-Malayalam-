@@ -22,7 +22,16 @@ class ReadingHub extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: heading('Bible', size: 34)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        eyebrow('YOUR DAILY QUIET'),
+                        const SizedBox(height: 6),
+                        heading('Bible', size: 38),
+                      ],
+                    ),
+                  ),
                   glassIcon(
                     CupertinoIcons.gear,
                     'Settings',
@@ -36,63 +45,11 @@ class ReadingHub extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              GlassPanel(
-                radius: 28,
-                padding: const EdgeInsets.all(18),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: uiAccent(context).withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: AppIcon(
-                        CupertinoIcons.book,
-                        size: 28,
-                        color: uiAccent(context),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Continue reading',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: uiMuted(context),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          heading('${s.location}:${s.verse}', size: 23),
-                        ],
-                      ),
-                    ),
-                    SizedBox.square(
-                      dimension: 46,
-                      child: FilledButton(
-                        onPressed: () => openReader(context, s),
-                        style: FilledButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          shape: const CircleBorder(),
-                        ),
-                        child: const AppIcon(
-                          CupertinoIcons.arrow_right,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ReadingFeature(store: s),
               const SizedBox(height: 26),
               Row(
                 children: [
-                  Expanded(child: heading('Your reading plan', size: 20)),
+                  Expanded(child: heading('Your reading plan', size: 23)),
                   TextButton(
                     onPressed: () => Navigator.push(
                       context,
@@ -120,7 +77,7 @@ class ReadingHub extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          PlanCover(plan: p, width: 86),
+                          PlanCover(plan: p, width: 96),
                           const SizedBox(width: 18),
                           Expanded(
                             child: Column(
@@ -337,10 +294,10 @@ class PlanCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: width,
-    height: width * 1.36,
+    height: width,
     padding: const EdgeInsets.all(10),
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(16),
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -375,9 +332,109 @@ class PlanCover extends StatelessWidget {
             ),
           ),
         ),
-        const AppIcon(CupertinoIcons.book, size: 28, color: Colors.white),
-        const SizedBox(height: 8),
+        AppIcon(
+          CupertinoIcons.book,
+          size: width > 70 ? 24 : 16,
+          color: uiAccent(context),
+        ),
+        const SizedBox(height: 2),
       ],
+    ),
+  );
+}
+
+/// A cover-like entry point, using only the active theme's existing accent.
+class ReadingFeature extends StatelessWidget {
+  final BibleStore store;
+  const ReadingFeature({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) => PressScale(
+    child: Semantics(
+      button: true,
+      label: 'Continue reading ${store.location}:${store.verse}',
+      child: InkWell(
+        onTap: () => openReader(context, store),
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Color.alphaBlend(
+              uiAccent(
+                context,
+              ).withValues(alpha: toneOf(context).mode == 2 ? .16 : .09),
+              toneOf(context).background,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Continue reading',
+                      style: TextStyle(
+                        color: uiInk(context),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  AppIcon(
+                    CupertinoIcons.book,
+                    size: 32,
+                    color: uiAccent(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              Text(
+                '${store.location}:${store.verse}',
+                style: TextStyle(
+                  fontSize: 32,
+                  height: 1.12,
+                  letterSpacing: -1,
+                  fontWeight: FontWeight.w700,
+                  color: uiInk(context),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'A moment in the Word.',
+                style: TextStyle(fontSize: 14, color: uiInk(context)),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Pick up where you left off',
+                      style: TextStyle(fontSize: 12, color: uiInk(context)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: uiInk(context).withValues(alpha: .15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: AppIcon(
+                      CupertinoIcons.arrow_right,
+                      color: uiInk(context),
+                      size: 21,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
   );
 }

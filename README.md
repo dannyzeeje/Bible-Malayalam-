@@ -19,3 +19,19 @@ Malayalam Bible 1910 edition, digitized and revised by The Free Bible Foundation
 [Scripture source](https://ebible.org/mal2015/) · [Full attribution](assets/ATTRIBUTION.txt)
 
 Bundled fonts are licensed under SIL OFL 1.1; licenses are included in [assets/fonts](assets/fonts/). The app is not endorsed by the scripture publisher.
+
+## Android builds
+
+GitHub Actions runs static analysis and widget/visual tests on pull requests,
+main-branch pushes, and manual runs of **Build Android APK**. Download
+`Malayalam-Bible-debug-APK` from the successful run's Artifacts section.
+Flutter is pinned to 3.47.7 to keep visual snapshots consistent.
+
+**Build Universal Release APK** builds a signed release on `v*` tags or manual
+runs. It requires the existing `ANDROID_KEYSTORE_BASE64`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, and `ANDROID_KEY_ALIAS`
+repository secrets.
+
+The interface uses the existing Light, Paper and Dark accents with a featured
+reading card, square plan covers, larger headings and a translucent tab bar.
+Tab transitions and cover press feedback respect the system reduced-motion setting.
