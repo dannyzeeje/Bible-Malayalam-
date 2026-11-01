@@ -19,17 +19,24 @@ part 'motion.dart';
 part 'icons.dart';
 part 'dashboard.dart';
 part 'tags.dart';
+part 'history.dart';
 
 const ink = Color(0xff16181d);
 const accent = Color(0xff526FA3);
 const muted = Color(0xff727580);
 final attribution =
-    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.3 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
+    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.4 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
-    for (final name in ['NotoSansMalayalam', 'Manjari', 'Gayathri']) {
+    for (final name in [
+      'NotoSansMalayalam',
+      'Manjari',
+      'Gayathri',
+      'Chilanka',
+      'BalooChettan2',
+    ]) {
       yield LicenseEntryWithLineBreaks([
         name,
       ], await rootBundle.loadString('assets/fonts/$name-OFL.txt'));
@@ -63,22 +70,22 @@ class _WordAppState extends State<WordApp> {
       ? store.load()
       : Future<void>.value();
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<int>(
-    valueListenable: store.themeChanges,
-    builder: (context, mode, _) => MaterialApp(
+  Widget build(BuildContext context) => ValueListenableBuilder<(int, String)>(
+    valueListenable: store.appearanceChanges,
+    builder: (context, appearance, _) => MaterialApp(
       title: 'Bible',
       scrollBehavior: const ContentScrollBehavior(),
       debugShowCheckedModeBanner: false,
-      theme: appTheme(mode),
+      theme: appTheme(appearance.$1, appearance.$2),
       themeAnimationDuration: const Duration(milliseconds: 180),
       themeAnimationCurve: Curves.easeOutCubic,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: mode == 2
+        value: appearance.$1 == 2
             ? SystemUiOverlayStyle.light
             : SystemUiOverlayStyle.dark,
         child: CupertinoTheme(
           data: CupertinoThemeData(
-            brightness: mode == 2 ? Brightness.dark : Brightness.light,
+            brightness: appearance.$1 == 2 ? Brightness.dark : Brightness.light,
             primaryColor: uiAccent(context),
             scaffoldBackgroundColor: toneOf(context).background,
           ),

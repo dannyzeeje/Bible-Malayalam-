@@ -1,3 +1,9 @@
+## 2.3.4
+
+- Malayalam interface labels follow the selected Malayalam reading font.
+- Added Chilanka and Baloo Chettan 2 Unicode fonts, bundled for offline use under SIL OFL.
+- Added device-local, date-grouped reading history for today and the previous four days. Repeated visits to the same verse are combined per day; tap a history entry to revisit it.
+
 ## 2.3.3
 
 - Passage picker opens fully expanded; choose a book, chapter and verse to navigate immediately.

@@ -1,3 +1,16 @@
+# 2.3.4 fonts and reading history
+
+- Selected Malayalam font is propagated through the UI theme fallback and local
+  Appearance theme, preserving Inter for English controls. Theme updates listen
+  only to appearance changes rather than rebuilding on reading-position updates.
+- Added official Google Fonts Chilanka and Baloo Chettan 2 assets and SIL OFL files.
+- History records opened/stable reading positions, deduplicates each verse per
+  local calendar day, expires records before today minus four days, and persists
+  across restarts. Day-boundary, expiry, persistence and navigation tests pass.
+- History is available from the home clock and Settings → Saved data. History
+  stays local; annotation restore remains limited to annotations.
+- All 44 tests pass, including UI font propagation and visual snapshots.
+
 # 2.3.3 reader and saved-data improvements
 
 - Passage selection opens at full height and navigates on verse selection.

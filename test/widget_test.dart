@@ -26,6 +26,8 @@ void main() {
       'MalayalamSans': 'NotoSansMalayalam.ttf',
       'Manjari': 'Manjari.ttf',
       'Gayathri': 'Gayathri.ttf',
+      'Chilanka': 'Chilanka.ttf',
+      'BalooChettan2': 'BalooChettan2.ttf',
     }.entries) {
       await (FontLoader(
         entry.key,
@@ -165,6 +167,83 @@ void main() {
         restored.search('${malayalamBooks['JOH']} 3:16').single.id,
         'JOH.3.16',
       );
+    },
+  );
+
+  test(
+    'History keeps five local calendar days, deduplicates and survives reload',
+    () async {
+      var now = DateTime(2026, 11, 1, 9);
+      final store = BibleStore(clock: () => now);
+      await store.load();
+      store.go('JOH', 3, '16');
+      now = now.add(const Duration(hours: 1));
+      store.go('JOH', 3, '16');
+      expect(store.recentHistory.length, 1);
+      now = DateTime(2026, 11, 2, 0, 1);
+      store.go('JOH', 3, '16');
+      expect(store.recentHistory.length, 2);
+      now = DateTime(2026, 11, 5, 23, 59);
+      store.go('PSA', 23, '1');
+      expect(store.recentHistory.length, 3);
+      await store.persist();
+      final loaded = BibleStore(clock: () => now);
+      await loaded.load();
+      expect(loaded.recentHistory.map((v) => v.verseId), [
+        'PSA.23.1',
+        'JOH.3.16',
+        'JOH.3.16',
+      ]);
+      now = DateTime(2026, 11, 6);
+      expect(loaded.recentHistory.length, 2);
+      now = DateTime(2026, 11, 10);
+      expect(loaded.recentHistory, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'Selected Malayalam font updates UI fallback and history reopens a verse',
+    (tester) async {
+      final store = BibleStore();
+      await tester.runAsync(store.load);
+      store.go('JOH', 3, '16');
+      store.malayalamNames = true;
+      await tester.pumpWidget(WordApp(store: store));
+      await tester.pumpAndSettle();
+      for (final family in ['Chilanka', 'BalooChettan2']) {
+        store.fontFamily = family;
+        store.changed();
+        await tester.pumpAndSettle();
+        final theme = tester
+            .widget<MaterialApp>(find.byType(MaterialApp))
+            .theme!;
+        expect(
+          theme.textTheme.bodyMedium!.fontFamilyFallback,
+          contains(family),
+        );
+        final context = tester.element(
+          find.text('${malayalamBooks['JOH']} 3:16'),
+        );
+        expect(
+          DefaultTextStyle.of(context).style.fontFamilyFallback,
+          contains(family),
+        );
+      }
+      await tester.tap(find.byTooltip('Reading history'));
+      await tester.pumpAndSettle();
+      expect(find.text('Today'), findsNothing);
+      expect(find.text('TODAY'), findsOneWidget);
+      await expectLater(
+        find.byType(ReadingHistory),
+        matchesGoldenFile('screens/reading-history.png'),
+      );
+      await tester.tap(find.text('${malayalamBooks['JOH']} 3:16'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Reader), findsOneWidget);
+      expect(store.verse, '16');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
     },
   );
 

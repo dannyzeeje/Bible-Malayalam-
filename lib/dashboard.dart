@@ -33,6 +33,12 @@ class ReadingHub extends StatelessWidget {
                     ),
                   ),
                   glassIcon(
+                    CupertinoIcons.clock,
+                    'Reading history',
+                    () => openHistory(context, s),
+                  ),
+                  const SizedBox(width: 8),
+                  glassIcon(
                     CupertinoIcons.gear,
                     'Settings',
                     () => Navigator.push(
