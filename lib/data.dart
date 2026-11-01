@@ -8,6 +8,8 @@ const readingFonts = <String, String>{
   'MalayalamSans': 'Noto Sans',
   'Manjari': 'Manjari',
   'Gayathri': 'Gayathri',
+  'Chilanka': 'Chilanka',
+  'BalooChettan2': 'Baloo Chettan 2',
 };
 
 const bookNames = <String, String>{
@@ -190,7 +192,42 @@ _BibleCorpus _parseAndIndexBible(String raw) {
   );
 }
 
+class VerseVisit {
+  final String verseId;
+  final DateTime visitedAt;
+  const VerseVisit(this.verseId, this.visitedAt);
+}
+
 class BibleStore extends ChangeNotifier {
+  final DateTime Function() clock;
+  BibleStore({DateTime Function()? clock}) : clock = clock ?? DateTime.now;
+  final List<VerseVisit> _history = [];
+  DateTime _day(DateTime date) =>
+      DateTime(date.toLocal().year, date.toLocal().month, date.toLocal().day);
+  List<VerseVisit> get recentHistory {
+    final now = clock();
+    final today = _day(now);
+    final cutoff = DateTime(today.year, today.month, today.day - 4);
+    _history.removeWhere(
+      (v) =>
+          v.visitedAt.isBefore(cutoff) ||
+          v.visitedAt.isAfter(now) ||
+          !byId.containsKey(v.verseId),
+    );
+    return List.unmodifiable(_history.reversed);
+  }
+
+  void recordVisit() {
+    final id = '$book.$chapter.$verse';
+    if (!byId.containsKey(id)) return;
+    final now = clock();
+    recentHistory;
+    _history.removeWhere(
+      (v) => v.verseId == id && _day(v.visitedAt) == _day(now),
+    );
+    _history.add(VerseVisit(id, now));
+  }
+
   static const storage = MethodChannel('word.bible/storage');
   List<Verse> all = [];
   List<String> _searchTexts = [];
@@ -236,6 +273,7 @@ class BibleStore extends ChangeNotifier {
   static const double fixedBlur = 18;
   double get blurStrength => fixedBlur;
   final themeChanges = ValueNotifier<int>(0);
+  final appearanceChanges = ValueNotifier<(int, String)>((0, 'Malayalam'));
   final List<ReadingPlan> customPlans = [];
   List<ReadingPlan> get allPlans => [...readingPlans, ...customPlans];
   int defaultHighlight = 0;
@@ -255,6 +293,11 @@ class BibleStore extends ChangeNotifier {
             as Map<String, dynamic>;
     theme = ((prefs['theme'] as num?)?.toInt() ?? 0).clamp(0, 2);
     themeChanges.value = theme;
+    // Apply saved appearance before corpus parsing so dark-mode startup stays dark.
+    if (readingFonts.containsKey(prefs['fontFamily'])) {
+      fontFamily = prefs['fontFamily'] as String;
+    }
+    appearanceChanges.value = (theme, fontFamily);
     final corpus = await compute(
       _parseAndIndexBible,
       await rootBundle.loadString('assets/bible.json'),
@@ -270,6 +313,20 @@ class BibleStore extends ChangeNotifier {
     verseOrder.addEntries(
       all.asMap().entries.map((e) => MapEntry(e.value.id, e.key)),
     );
+    for (final entry
+        in prefs['history'] is List ? prefs['history'] as List : const []) {
+      if (entry is! Map ||
+          entry['verse'] is! String ||
+          entry['at'] is! String) {
+        continue;
+      }
+      final date = DateTime.tryParse(entry['at']);
+      if (date != null && byId.containsKey(entry['verse'])) {
+        _history.add(VerseVisit(entry['verse'], date.toLocal()));
+      }
+    }
+    _history.sort((a, b) => a.visitedAt.compareTo(b.visitedAt));
+    recentHistory;
     bookmarks = (prefs['bookmarks'] ?? [])
         .cast<String>()
         .where(byId.containsKey)
@@ -310,6 +367,7 @@ class BibleStore extends ChangeNotifier {
     malayalamNames = prefs['malayalamNames'] == true;
     final savedFont = prefs['fontFamily'];
     if (readingFonts.containsKey(savedFont)) fontFamily = savedFont;
+    appearanceChanges.value = (theme, fontFamily);
     final colors = prefs['highlightColors'] as Map<String, dynamic>? ?? {};
     highlightColors = {
       for (final id in highlights)
@@ -380,6 +438,13 @@ class BibleStore extends ChangeNotifier {
   String get location => '${bookLabel(book)} $chapter';
   int count(String b) => _chapterCounts[b] ?? 0;
   Map<String, dynamic> get stateData => {
+    'history': [
+      for (final visit in recentHistory.reversed)
+        {
+          'verse': visit.verseId,
+          'at': visit.visitedAt.toUtc().toIso8601String(),
+        },
+    ],
     'bookmarks': bookmarks.toList(),
     'bookmarkTags': bookmarkTags,
     'tagLibrary': tagLibrary.toList(),
@@ -545,6 +610,7 @@ class BibleStore extends ChangeNotifier {
   }
 
   void changed() {
+    appearanceChanges.value = (theme, fontFamily);
     if (themeChanges.value != theme) themeChanges.value = theme;
     notifyListeners();
   }
@@ -647,6 +713,7 @@ class BibleStore extends ChangeNotifier {
     book = b;
     chapter = c;
     verse = v;
+    recordVisit();
     notifyListeners();
   }
 

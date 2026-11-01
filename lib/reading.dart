@@ -32,6 +32,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     scroll.addListener(track);
     s.addListener(syncAwake);
     syncAwake();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      s.recordVisit();
+      save(context, s);
+    });
   }
 
   Future<void> setAwake(bool enabled) async {
@@ -83,6 +88,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
             box.localToGlobal(Offset.zero).dy >= edge) {
           if (s.verse != e.key) {
             s.verse = e.key;
+            s.recordVisit();
             save(context, s);
           }
           break;

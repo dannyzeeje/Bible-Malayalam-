@@ -58,8 +58,11 @@ Color uiOnAccent(BuildContext context) =>
     Theme.of(context).colorScheme.onPrimary;
 Color uiFill(BuildContext context) => toneOf(context).fill;
 
-final _themeCache = <int, ThemeData>{};
-ThemeData appTheme(int mode) => _themeCache.putIfAbsent(mode, () {
+final _themeCache = <String, ThemeData>{};
+ThemeData appTheme(
+  int mode, [
+  String malayalamFont = 'Malayalam',
+]) => _themeCache.putIfAbsent('$mode/$malayalamFont', () {
   final dark = mode == 2;
   final bg = dark
       ? const Color(0xff111113)
@@ -109,6 +112,7 @@ ThemeData appTheme(int mode) => _themeCache.putIfAbsent(mode, () {
   return ThemeData(
     useMaterial3: true,
     fontFamily: 'Inter',
+    fontFamilyFallback: [malayalamFont],
     colorScheme: scheme,
     scaffoldBackgroundColor: bg,
     extensions: [tone],
@@ -117,11 +121,13 @@ ThemeData appTheme(int mode) => _themeCache.putIfAbsent(mode, () {
       shape: const StadiumBorder(),
       labelStyle: TextStyle(
         fontFamily: 'Inter',
+        fontFamilyFallback: [malayalamFont],
         fontSize: 12,
         color: scheme.onSurface,
       ),
       secondaryLabelStyle: TextStyle(
         fontFamily: 'Inter',
+        fontFamilyFallback: [malayalamFont],
         fontSize: 12,
         color: scheme.onSurface,
       ),
@@ -149,6 +155,7 @@ ThemeData appTheme(int mode) => _themeCache.putIfAbsent(mode, () {
     ),
     textTheme: (dark ? ThemeData.dark() : ThemeData.light()).textTheme.apply(
       fontFamily: 'Inter',
+      fontFamilyFallback: [malayalamFont],
       bodyColor: scheme.onSurface,
       displayColor: scheme.onSurface,
     ),
@@ -163,8 +170,9 @@ ThemeData appTheme(int mode) => _themeCache.putIfAbsent(mode, () {
       style: FilledButton.styleFrom(
         shape: const StadiumBorder(),
         minimumSize: const Size(44, 44),
-        textStyle: const TextStyle(
+        textStyle: TextStyle(
           fontFamily: 'Inter',
+          fontFamilyFallback: [malayalamFont],
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),

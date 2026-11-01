@@ -8,7 +8,7 @@ An offline Malayalam Bible reader for Android with a simple interface and Englis
 - Malayalam word and phrase search, plus passage lookup such as `John 3:16`.
 - Bookmarks, highlights, notes and saved reading position.
 - Built-in and custom reading plans with progress tracking.
-- Light, Paper and Dark themes, four Malayalam fonts, and adjustable text size and spacing.
+- Light, Paper and Dark themes, six Malayalam fonts, and adjustable text size and spacing.
 
 No account or internet connection is required. Notes, bookmarks and reading progress stay on your device; clearing app data or uninstalling removes them.
 
@@ -35,3 +35,8 @@ repository secrets.
 The interface uses the existing Light, Paper and Dark accents with a featured
 reading card, square plan covers, larger headings and a translucent tab bar.
 Tab transitions and cover press feedback respect the system reduced-motion setting.
+
+Reading history is available from the home clock button and Settings → Saved data.
+It keeps visited verses for today and the previous four days on this device.
+The selected Malayalam font also applies to Malayalam interface labels. Chilanka
+and Baloo Chettan 2 are bundled with their SIL OFL licences for offline use.

@@ -73,7 +73,7 @@ class ReadingAppearance extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: store,
     builder: (context, _) => Theme(
-      data: appTheme(store.theme),
+      data: appTheme(store.theme, store.fontFamily),
       child: Builder(
         builder: (context) {
           final s = store;
@@ -340,7 +340,12 @@ class ReadingAppearance extends StatelessWidget {
                                 menuLabel(context, 'Typeface'),
                                 const SizedBox(height: 10),
                                 SizedBox(
-                                  height: 76,
+                                  height: math.max(
+                                    96,
+                                    MediaQuery.textScalerOf(context).scale(20) *
+                                            3.8 +
+                                        20,
+                                  ),
                                   child: ListView.separated(
                                     scrollDirection: Axis.horizontal,
                                     itemCount: readingFonts.length,
@@ -367,7 +372,7 @@ class ReadingAppearance extends StatelessWidget {
                                               context,
                                               180,
                                             ),
-                                            width: 106,
+                                            width: 120,
                                             padding: const EdgeInsets.all(9),
                                             decoration: BoxDecoration(
                                               color: s.fontFamily == e.key

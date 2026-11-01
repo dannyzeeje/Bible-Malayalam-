@@ -435,6 +435,12 @@ class SettingsPage extends StatelessWidget {
                       settingsGroup(context, 'Saved data', [
                         settingsRow(
                           context,
+                          CupertinoIcons.clock,
+                          'Reading history',
+                          onTap: () => openHistory(context, s),
+                        ),
+                        settingsRow(
+                          context,
                           CupertinoIcons.tag,
                           'Manage tags',
                           onTap: () => manageTags(context, s),

@@ -1,7 +1,7 @@
 name: word_bible
 description: An offline Malayalam Bible reader with English controls.
 publish_to: none
-version: 2.3.3+19
+version: 2.3.4+20
 environment:
   sdk: ^3.10.1
 dependencies:
@@ -27,6 +27,8 @@ flutter:
     - assets/fonts/Gayathri-OFL.txt
     - assets/fonts/Inter-OFL.txt
     - assets/fonts/Lora-OFL.txt
+    - assets/fonts/Chilanka-OFL.txt
+    - assets/fonts/BalooChettan2-OFL.txt
   fonts:
     - family: Malayalam
       fonts:
@@ -46,3 +48,9 @@ flutter:
     - family: Gayathri
       fonts:
         - asset: assets/fonts/Gayathri.ttf
+    - family: Chilanka
+      fonts:
+        - asset: assets/fonts/Chilanka.ttf
+    - family: BalooChettan2
+      fonts:
+        - asset: assets/fonts/BalooChettan2.ttf
