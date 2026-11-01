@@ -293,6 +293,11 @@ class BibleStore extends ChangeNotifier {
             as Map<String, dynamic>;
     theme = ((prefs['theme'] as num?)?.toInt() ?? 0).clamp(0, 2);
     themeChanges.value = theme;
+    // Apply saved appearance before corpus parsing so dark-mode startup stays dark.
+    if (readingFonts.containsKey(prefs['fontFamily'])) {
+      fontFamily = prefs['fontFamily'] as String;
+    }
+    appearanceChanges.value = (theme, fontFamily);
     final corpus = await compute(
       _parseAndIndexBible,
       await rootBundle.loadString('assets/bible.json'),
