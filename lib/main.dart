@@ -25,7 +25,7 @@ const ink = Color(0xff16181d);
 const accent = Color(0xff526FA3);
 const muted = Color(0xff727580);
 final attribution =
-    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.4 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
+    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.5 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -183,12 +183,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     duration: const Duration(milliseconds: 320),
     value: 1,
   );
-  late final tabOpacity = tabMotion.drive(
-    Tween<double>(
-      begin: .35,
-      end: 1,
-    ).chain(CurveTween(curve: Curves.easeOutCubic)),
-  );
+  double indicatorFrom = -1;
+  double get indicatorPosition =>
+      indicatorFrom +
+      (-1 + 2 * tab / 3 - indicatorFrom) *
+          Curves.easeOutCubic.transform(tabMotion.value);
   late final tabOffset = tabMotion.drive(
     Tween<Offset>(
       begin: const Offset(0, .018),
@@ -206,7 +205,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   void switchTab(int index) {
     if (tab == index) return;
     FocusManager.instance.primaryFocus?.unfocus();
+    final from = indicatorPosition;
     setState(() {
+      indicatorFrom = from;
       tab = index;
       visited.add(index);
     });
@@ -237,24 +238,21 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       child: Stack(
         children: [
           Positioned.fill(
-            child: FadeTransition(
-              opacity: tabOpacity,
-              child: SlideTransition(
-                position: tabOffset,
-                child: IndexedStack(
-                  index: tab,
-                  children: [
-                    for (int i = 0; i < pages.length; i++)
-                      TickerMode(
-                        enabled: tab == i,
-                        child: !visited.contains(i)
-                            ? const SizedBox.shrink()
-                            : i < 2
-                            ? pages[i]
-                            : SafeArea(bottom: false, child: pages[i]),
-                      ),
-                  ],
-                ),
+            child: SlideTransition(
+              position: tabOffset,
+              child: IndexedStack(
+                index: tab,
+                children: [
+                  for (int i = 0; i < pages.length; i++)
+                    TickerMode(
+                      enabled: tab == i,
+                      child: !visited.contains(i)
+                          ? const SizedBox.shrink()
+                          : i < 2
+                          ? pages[i]
+                          : SafeArea(bottom: false, child: pages[i]),
+                    ),
+                ],
               ),
             ),
           ),
@@ -267,6 +265,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       top: false,
       minimum: EdgeInsets.fromLTRB(16, 6, 16, 12),
       child: FloatingGlass(
+        key: const ValueKey('home-dock'),
         blur: true,
         radius: 28,
         padding: EdgeInsets.all(5),
@@ -279,14 +278,17 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: AnimatedAlign(
-                    alignment: Alignment(-1 + 2 * tab / 3, 0),
-                    duration: motionDuration(context, 340),
-                    curve: Curves.easeOutCubic,
+                  child: AnimatedBuilder(
+                    animation: tabMotion,
+                    builder: (context, child) => Align(
+                      alignment: Alignment(indicatorPosition, 0),
+                      child: child,
+                    ),
                     child: FractionallySizedBox(
                       widthFactor: .25,
                       heightFactor: 1,
                       child: DecoratedBox(
+                        key: const ValueKey('dock-indicator'),
                         decoration: BoxDecoration(
                           color: uiAccent(context).withValues(alpha: .11),
                           borderRadius: BorderRadius.circular(999),

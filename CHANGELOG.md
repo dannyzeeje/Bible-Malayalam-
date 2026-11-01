@@ -1,3 +1,8 @@
+## 2.3.5
+
+- Decluttered reading history to a compact, day-grouped list of references and visit times.
+- Removed the fading content layer beneath the glass dock. Dock movement now shares the tab transition timeline and reverses from its current position during rapid tab switches.
+
 ## 2.3.4
 
 - Malayalam interface labels follow the selected Malayalam reading font.

@@ -30,15 +30,12 @@ class ReadingHistory extends StatelessWidget {
           child: SafeArea(
             child: Column(
               children: [
-                pageHeader(context, 'Reading history'),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Today and the previous four days · stored on this device',
-                      style: TextStyle(fontSize: 12, color: uiMuted(context)),
-                    ),
+                pageHeader(
+                  context,
+                  'History',
+                  trailing: Text(
+                    '5 days',
+                    style: TextStyle(fontSize: 12, color: uiMuted(context)),
                   ),
                 ),
                 Expanded(
@@ -71,35 +68,17 @@ class ReadingHistory extends StatelessWidget {
                                       top: 10,
                                       bottom: 12,
                                     ),
-                                    child: eyebrow(label.toUpperCase()),
-                                  ),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    store.verseLabel(verse),
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 8),
                                     child: Text(
-                                      verse.text,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                      label,
                                       style: TextStyle(
-                                        fontFamily: store.fontFamily,
-                                        fontSize: 15,
-                                        height: 1.7,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
                                         color: uiMuted(context),
                                       ),
                                     ),
                                   ),
-                                  trailing: const AppIcon(
-                                    CupertinoIcons.chevron_right,
-                                    size: 14,
-                                  ),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(14),
                                   onTap: () async {
                                     await openReader(
                                       context,
@@ -108,8 +87,44 @@ class ReadingHistory extends StatelessWidget {
                                     );
                                     if (context.mounted) store.changed();
                                   },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                      horizontal: 2,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            store.verseLabel(verse),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Text(
+                                          MaterialLocalizations.of(
+                                            context,
+                                          ).formatTimeOfDay(
+                                            TimeOfDay.fromDateTime(
+                                              visit.visitedAt.toLocal(),
+                                            ),
+                                            alwaysUse24HourFormat:
+                                                MediaQuery.alwaysUse24HourFormatOf(
+                                                  context,
+                                                ),
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: uiMuted(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                                const Divider(),
                               ],
                             );
                           },

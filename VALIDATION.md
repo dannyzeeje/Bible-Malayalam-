@@ -1,3 +1,14 @@
+# 2.3.5 history and dock polish
+
+- History uses compact references and local visit times; removed long preview text,
+  repeated dividers, chevrons and explanatory copy.
+- Dock highlight follows the existing tab controller. On interrupted transitions,
+  the next tween starts from its rendered position. Removed the content opacity
+  layer sampled by the dock blur; tab state/lazy mounting are retained.
+- All 46 tests pass with ordinary visual comparisons; analysis is clean.
+  Regressions cover Saved → Search → Saved interruptions, fixed dock bounds,
+  day grouping and compact history presentation.
+
 # 2.3.4 fonts and reading history
 
 - Selected Malayalam font is propagated through the UI theme fallback and local

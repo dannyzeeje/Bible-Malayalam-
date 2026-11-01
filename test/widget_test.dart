@@ -204,7 +204,7 @@ void main() {
   testWidgets(
     'Selected Malayalam font updates UI fallback and history reopens a verse',
     (tester) async {
-      final store = BibleStore();
+      final store = BibleStore(clock: () => DateTime(2026, 11, 2, 10, 5));
       await tester.runAsync(store.load);
       store.go('JOH', 3, '16');
       store.malayalamNames = true;
@@ -231,8 +231,8 @@ void main() {
       }
       await tester.tap(find.byTooltip('Reading history'));
       await tester.pumpAndSettle();
-      expect(find.text('Today'), findsNothing);
-      expect(find.text('TODAY'), findsOneWidget);
+      expect(find.text('TODAY'), findsNothing);
+      expect(find.text('Today'), findsOneWidget);
       await expectLater(
         find.byType(ReadingHistory),
         matchesGoldenFile('screens/reading-history.png'),
@@ -1888,6 +1888,88 @@ void main() {
     expect(find.text('Search scripture'), findsOneWidget);
     expect(find.byTooltip('Clear search'), findsNothing);
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Saved to Search dock stays fixed and reverses continuously', (
+    tester,
+  ) async {
+    final s = BibleStore();
+    await tester.runAsync(s.load);
+    s.bookmarks.add('JOH.3.16');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appTheme(0),
+        home: Home(store: s),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved').last);
+    await tester.pumpAndSettle();
+    final dock = find.byKey(const ValueKey('home-dock'));
+    final indicator = find.byKey(const ValueKey('dock-indicator'));
+    final bounds = tester.getRect(dock);
+    final savedX = tester.getRect(indicator).left;
+    await tester.tap(find.text('Search').last);
+    await tester.pump();
+    expect(tester.getRect(indicator).left, closeTo(savedX, .1));
+    await tester.pump(const Duration(milliseconds: 80));
+    final movingX = tester.getRect(indicator).left;
+    expect(movingX, lessThan(savedX));
+    expect(tester.getRect(dock), bounds);
+    for (final fade in tester.widgetList<FadeTransition>(
+      find.ancestor(
+        of: find.byType(IndexedStack),
+        matching: find.byType(FadeTransition),
+      ),
+    )) {
+      expect(fade.opacity.value, 1);
+    }
+    await tester.tap(find.text('Saved').last);
+    await tester.pump();
+    expect(tester.getRect(indicator).left, closeTo(movingX, .1));
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(tester.getRect(indicator).left, greaterThan(movingX));
+    expect(tester.getRect(dock), bounds);
+    await tester.tap(find.text('Search').last);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(indicator).left, lessThan(savedX));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('History uses compact references and times grouped by day', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(393, 852));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var now = DateTime(2026, 11, 1, 8, 30);
+    final s = BibleStore(clock: () => now);
+    await tester.runAsync(s.load);
+    s.go('PSA', 23, '1');
+    now = DateTime(2026, 11, 1, 9, 15);
+    s.go('PSA', 23, '2');
+    now = DateTime(2026, 11, 2, 10, 5);
+    s.go('PSA', 24, '1');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appTheme(2),
+        home: ReadingHistory(store: s),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Yesterday'), findsOneWidget);
+    expect(find.text(s.byId['PSA.23.1']!.text), findsNothing);
+    expect(find.text('Psalms 23:1'), findsOneWidget);
+    await expectLater(
+      find.byType(ReadingHistory),
+      matchesGoldenFile('screens/history-compact-dark.png'),
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Reduced motion disables pill animation', (tester) async {
