@@ -1,3 +1,13 @@
+# 2.3.3 reader and saved-data improvements
+
+- Passage selection opens at full height and navigates on verse selection.
+- Annotation backup tests cover merge/round-trip, malformed input rejection, tags,
+  highlight colours and note ranges. Bilingual search and label persistence verified.
+- Backups restore annotations by merging; matching entries take the backup value.
+  Settings and reading plans are exported for reference but are not overwritten on restore.
+- Android file-picker and signed APK compilation are verified by the release workflow;
+  physical-device file-provider interaction and GPU profiling require device testing.
+
 # 2.3.2 reference and Sthuthi styling
 
 - Appearance follows the supplied layout with a fixed, scrollable two-verse preview,

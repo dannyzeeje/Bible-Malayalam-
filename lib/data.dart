@@ -244,6 +244,11 @@ class BibleStore extends ChangeNotifier {
   int chapter = 23, theme = 0;
   double fontSize = 20, lineHeight = 1.9;
   bool numbers = true;
+  bool malayalamNames = false;
+  String verseLabel(Verse verse) =>
+      '${bookLabel(verse.book)} ${verse.chapter}:${verse.number}';
+  String bookLabel(String code) =>
+      malayalamNames ? malayalamBooks[code]! : bookNames[code]!;
   Future<void> load() async {
     final prefs =
         jsonDecode(await storage.invokeMethod<String>('read') ?? '{}')
@@ -302,6 +307,7 @@ class BibleStore extends ChangeNotifier {
       2.3,
     );
     numbers = prefs['numbers'] ?? true;
+    malayalamNames = prefs['malayalamNames'] == true;
     final savedFont = prefs['fontFamily'];
     if (readingFonts.containsKey(savedFont)) fontFamily = savedFont;
     final colors = prefs['highlightColors'] as Map<String, dynamic>? ?? {};
@@ -371,40 +377,171 @@ class BibleStore extends ChangeNotifier {
   }
 
   List<Verse> get current => chapters['$book.$chapter']!;
-  String get location => '${bookNames[book]} $chapter';
+  String get location => '${bookLabel(book)} $chapter';
   int count(String b) => _chapterCounts[b] ?? 0;
+  Map<String, dynamic> get stateData => {
+    'bookmarks': bookmarks.toList(),
+    'bookmarkTags': bookmarkTags,
+    'tagLibrary': tagLibrary.toList(),
+    'highlights': highlights.toList(),
+    'notes': jsonEncode(notes),
+    'book': book,
+    'chapter': chapter,
+    'verse': verse,
+    'theme': theme,
+    'fontSize': fontSize,
+    'lineHeight': lineHeight,
+    'numbers': numbers,
+    'malayalamNames': malayalamNames,
+    'fontFamily': fontFamily,
+    'highlightColors': highlightColors,
+    'noteRanges': noteRanges,
+    'activePlan': activePlan,
+    'planCompleted': planCompleted.map((k, v) => MapEntry(k, v.toList())),
+    'autoHide': autoHide,
+    'haptics': haptics,
+    'keepAwake': keepAwake,
+    'customPlans': [
+      for (final p in customPlans)
+        {'id': p.id, 'title': p.title, 'days': p.days, 'books': p.books},
+    ],
+    'defaultHighlight': defaultHighlight,
+  };
   Future<void> persist() async {
-    final ok = await storage.invokeMethod<bool>(
-      'write',
-      jsonEncode({
-        'bookmarks': bookmarks.toList(),
-        'bookmarkTags': bookmarkTags,
-        'tagLibrary': tagLibrary.toList(),
-        'highlights': highlights.toList(),
-        'notes': jsonEncode(notes),
-        'book': book,
-        'chapter': chapter,
-        'verse': verse,
-        'theme': theme,
-        'fontSize': fontSize,
-        'lineHeight': lineHeight,
-        'numbers': numbers,
-        'fontFamily': fontFamily,
-        'highlightColors': highlightColors,
-        'noteRanges': noteRanges,
-        'activePlan': activePlan,
-        'planCompleted': planCompleted.map((k, v) => MapEntry(k, v.toList())),
-        'autoHide': autoHide,
-        'haptics': haptics,
-        'keepAwake': keepAwake,
-        'customPlans': [
-          for (final p in customPlans)
-            {'id': p.id, 'title': p.title, 'days': p.days, 'books': p.books},
-        ],
-        'defaultHighlight': defaultHighlight,
-      }),
-    );
+    final ok = await storage.invokeMethod<bool>('write', jsonEncode(stateData));
     if (ok != true) throw StateError('Could not save changes on this device.');
+  }
+
+  String exportBackup() => jsonEncode({
+    'format': 'word-bible-backup',
+    'version': 1,
+    'data': stateData,
+  });
+
+  Future<void> restoreBackup(String source) async {
+    final envelope = jsonDecode(source);
+    if (envelope is! Map ||
+        envelope['format'] != 'word-bible-backup' ||
+        envelope['version'] != 1 ||
+        envelope['data'] is! Map) {
+      {
+        throw const FormatException('Choose a Bible backup file (version 1).');
+      }
+    }
+    final data = envelope['data'] as Map;
+    Set<String> ids(String key) {
+      final list = data[key];
+      if (list is! List ||
+          list.any((v) => v is! String || !byId.containsKey(v))) {
+        throw FormatException('Invalid $key in backup.');
+      }
+      return list.cast<String>().toSet();
+    }
+
+    final importedBookmarks = ids('bookmarks'),
+        importedHighlights = ids('highlights');
+    final importedNotes = jsonDecode(data['notes'] as String);
+    if (importedNotes is! Map ||
+        importedNotes.entries.any(
+          (e) => !byId.containsKey(e.key) || e.value is! String,
+        )) {
+      throw const FormatException('Invalid notes.');
+    }
+    final tags = data['bookmarkTags'];
+    final library = data['tagLibrary'];
+    final colors = data['highlightColors'];
+    final ranges = data['noteRanges'];
+    if (tags is! Map ||
+        library is! List ||
+        colors is! Map ||
+        ranges is! Map ||
+        library.any((t) => t is! String || t.length > 128) ||
+        tags.entries.any(
+          (e) =>
+              !byId.containsKey(e.key) ||
+              e.value is! List ||
+              (e.value as List).any((t) => t is! String || t.length > 128),
+        ) ||
+        colors.entries.any(
+          (e) =>
+              !byId.containsKey(e.key) ||
+              e.value is! int ||
+              e.value < 0 ||
+              e.value > 5,
+        ) ||
+        ranges.entries.any(
+          (e) =>
+              !byId.containsKey(e.key) ||
+              e.value is! List ||
+              (e.value as List).any(
+                (v) => v is! String || !byId.containsKey(v),
+              ),
+        )) {
+      throw const FormatException('Invalid annotations.');
+    }
+    final oldBookmarks = bookmarks,
+        oldHighlights = highlights,
+        oldNotes = notes,
+        oldTags = bookmarkTags,
+        oldLibrary = tagLibrary,
+        oldColors = highlightColors,
+        oldRanges = noteRanges;
+    bookmarks = {...bookmarks, ...importedBookmarks};
+    highlights = {...highlights, ...importedHighlights};
+    notes = {...notes, ...importedNotes.cast<String, String>()};
+    bookmarkTags = {
+      ...bookmarkTags,
+      for (final e in tags.entries)
+        e.key as String: (e.value as List).cast<String>(),
+    };
+    tagLibrary = {...tagLibrary, ...library.cast<String>()};
+    highlightColors = {...highlightColors, ...colors.cast<String, int>()};
+    noteRanges = {
+      ...noteRanges,
+      for (final e in ranges.entries)
+        e.key as String: (e.value as List).cast<String>(),
+    };
+    try {
+      await persist();
+    } catch (_) {
+      bookmarks = oldBookmarks;
+      highlights = oldHighlights;
+      notes = oldNotes;
+      bookmarkTags = oldTags;
+      tagLibrary = oldLibrary;
+      highlightColors = oldColors;
+      noteRanges = oldRanges;
+      rethrow;
+    }
+    changed();
+  }
+
+  void renameTag(String old, String replacement) {
+    final name = replacement.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (name.isEmpty || name.characters.length > 32) {
+      throw const FormatException('Use 1–32 characters.');
+    }
+    final canonical =
+        knownTags
+            .where((t) => t.toLowerCase() == name.toLowerCase() && t != old)
+            .firstOrNull ??
+        name;
+    bookmarkTags = {
+      for (final e in bookmarkTags.entries)
+        e.key: e.value.map((t) => t == old ? canonical : t).toSet().toList(),
+    };
+    tagLibrary
+      ..remove(old)
+      ..add(canonical);
+    changed();
+  }
+
+  void deleteTag(String tag) {
+    tagLibrary.remove(tag);
+    for (final tags in bookmarkTags.values) {
+      tags.remove(tag);
+    }
+    changed();
   }
 
   void changed() {
@@ -534,7 +671,8 @@ class BibleStore extends ChangeNotifier {
           .where(
             (e) =>
                 e.value.toLowerCase().startsWith(name) ||
-                e.key.toLowerCase() == name,
+                e.key.toLowerCase() == name ||
+                malayalamBooks[e.key]!.startsWith(name),
           )
           .toList();
       if (matches.length == 1) {
@@ -545,6 +683,17 @@ class BibleStore extends ChangeNotifier {
             )
             .toList();
       }
+    }
+    final namedBooks = bookNames.entries
+        .where(
+          (e) =>
+              e.value.toLowerCase().startsWith(q) ||
+              malayalamBooks[e.key]!.startsWith(q),
+        )
+        .map((e) => e.key)
+        .toSet();
+    if (q.length >= 2 && namedBooks.isNotEmpty) {
+      return all.where((v) => namedBooks.contains(v.book)).toList();
     }
     return [
       for (int i = 0; i < all.length; i++)

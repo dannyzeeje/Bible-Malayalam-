@@ -637,13 +637,17 @@ class MarkedScripture extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final child = Text.rich(scriptureSpan(text, number, style), style: style);
+    final effectiveStyle = DefaultTextStyle.of(context).style.merge(style);
+    final child = Text.rich(
+      scriptureSpan(text, number, effectiveStyle),
+      style: effectiveStyle,
+    );
     if (color == null) return child;
     return CustomPaint(
       painter: ScriptureMarkPainter(
         text: text,
         number: number,
-        style: style,
+        style: effectiveStyle,
         color: color!,
         selected: selected,
         scaler: MediaQuery.textScalerOf(context),
@@ -693,7 +697,9 @@ class ScriptureMarkPainter extends CustomPainter {
     int line = 0;
     for (final box in _boxes!) {
       if (box.right - box.left < 1) continue;
-      final left = box.left - 1, right = box.right + 1;
+      final left = box.left, right = box.right;
+      canvas.save();
+      canvas.clipRect(box.toRect());
       final top = box.top + box.toRect().height * .12;
       final bottom = box.bottom - box.toRect().height * .05;
       final height = bottom - top;
@@ -720,6 +726,20 @@ class ScriptureMarkPainter extends CustomPainter {
         Paint()..color = color.withValues(alpha: selected ? 0.085 : 0.26),
       );
       if (!selected) {
+        canvas.save();
+        canvas.clipPath(path);
+        final grain = math.Random(517 + line);
+        for (int i = 0; i < (right - left) * height / 35; i++) {
+          final x = left + grain.nextDouble() * (right - left);
+          final y = top + grain.nextDouble() * height;
+          canvas.drawLine(
+            Offset(x, y),
+            Offset(x + 1 + grain.nextDouble() * 3, y + .3),
+            Paint()
+              ..color = color.withValues(alpha: .16)
+              ..strokeWidth = .6 + grain.nextDouble(),
+          );
+        }
         // Uneven translucent pigment gives a hand-drawn crayon texture.
         for (int band = 1; band < 8; band++) {
           final y = top + height * band / 8;
@@ -732,7 +752,9 @@ class ScriptureMarkPainter extends CustomPainter {
               ..strokeCap = StrokeCap.round,
           );
         }
+        canvas.restore();
       }
+      canvas.restore();
       line++;
     }
   }

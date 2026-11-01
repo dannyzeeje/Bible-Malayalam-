@@ -24,7 +24,7 @@ const ink = Color(0xff16181d);
 const accent = Color(0xff526FA3);
 const muted = Color(0xff727580);
 final attribution =
-    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.2 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
+    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.3 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -603,7 +603,7 @@ Widget verseCard(
                           for (final id in s.noteRanges[v.id]!)
                             if (s.byId.containsKey(id)) s.byId[id]!,
                         ])
-                      : v.reference,
+                      : s.verseLabel(v),
                   style: TextStyle(
                     color: uiAccent(context),
                     fontWeight: FontWeight.w600,
@@ -751,6 +751,9 @@ class _SavedPageState extends State<SavedPage> {
                   DropdownButton<String>(
                     value: order,
                     underline: const SizedBox(),
+                    borderRadius: BorderRadius.circular(24),
+                    dropdownColor: toneOf(context).panelA.withValues(alpha: 1),
+                    elevation: 3,
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,

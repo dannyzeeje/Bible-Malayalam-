@@ -7,47 +7,53 @@ Future<void> appearance(BuildContext context, BibleStore s) =>
       barrierLabel: 'Close appearance',
       barrierColor: Colors.black.withValues(alpha: .18),
       transitionDuration: motionDuration(context, 300),
-      pageBuilder: (popup, animation, secondaryAnimation) => Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => Navigator.pop(popup),
-              child: BackdropFilter(
-                key: const ValueKey('appearance-backdrop'),
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: const ColoredBox(color: Colors.transparent),
+      pageBuilder: (popup, animation, secondaryAnimation) => AnimatedBuilder(
+        animation: animation,
+        builder: (context, _) => Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(popup),
+                child: BackdropFilter(
+                  key: const ValueKey('appearance-backdrop'),
+                  filter: ImageFilter.blur(
+                    sigmaX: 14 * animation.value,
+                    sigmaY: 14 * animation.value,
+                  ),
+                  child: const ColoredBox(color: Colors.transparent),
+                ),
               ),
             ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: FractionallySizedBox(
-                heightFactor: .92,
-                child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(0, .06),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutCubic,
+            SafeArea(
+              bottom: false,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: .92,
+                  child: SlideTransition(
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, .06),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
                         ),
-                      ),
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: ReadingAppearance(store: s),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: ReadingAppearance(store: s),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       transitionBuilder: (context, animation, secondaryAnimation, child) =>
-          FadeTransition(opacity: animation, child: child),
+          child,
     );
 
 class ReadingAppearance extends StatelessWidget {
@@ -629,7 +635,7 @@ class _PassageSheetState extends State<PassageSheet> {
         builder: (context, box) {
           final available = box.maxHeight;
           final min = (240 / available).clamp(.32, .88);
-          final initial = (440 / available).clamp(min, .94);
+          const initial = .96;
           return DraggableScrollableSheet(
             key: const ValueKey('passage-draggable'),
             controller: extent,
@@ -638,7 +644,7 @@ class _PassageSheetState extends State<PassageSheet> {
             minChildSize: min,
             maxChildSize: .96,
             snap: true,
-            snapSizes: [initial],
+            snapSizes: const [],
             builder: (context, sheetScroll) => GlassPanel(
               radius: 30,
               child: SafeArea(
@@ -730,7 +736,7 @@ class _PassageSheetState extends State<PassageSheet> {
                         children: [
                           Expanded(
                             flex: 3,
-                            child: step(0, 'Book', bookNames[book]!),
+                            child: step(0, 'Book', s.bookLabel(book)),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -748,14 +754,6 @@ class _PassageSheetState extends State<PassageSheet> {
                             : stage == 0
                             ? bookList(sheetScroll)
                             : numberGrid(sheetScroll),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: primaryPill(
-                          'Open ${bookNames[book]} $chapter:$verse',
-                          open,
-                        ),
                       ),
                     ],
                   ),
@@ -804,7 +802,8 @@ class _PassageSheetState extends State<PassageSheet> {
     final matches = bookNames.entries.where(
       (e) =>
           e.value.toLowerCase().contains(query.toLowerCase()) ||
-          e.key.toLowerCase() == query.toLowerCase(),
+          e.key.toLowerCase() == query.toLowerCase() ||
+          malayalamBooks[e.key]!.contains(query),
     );
     return ListView(
       controller: sheetScroll,
@@ -812,7 +811,7 @@ class _PassageSheetState extends State<PassageSheet> {
         if (refs.isNotEmpty)
           ListTile(
             title: Text(
-              refs.first.reference,
+              s.verseLabel(refs.first),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -825,7 +824,7 @@ class _PassageSheetState extends State<PassageSheet> {
           ListTile(
             dense: true,
             title: Text(
-              b.value,
+              s.bookLabel(b.key),
               style: TextStyle(fontSize: 14, color: uiInk(context)),
             ),
             trailing: AppIcon(CupertinoIcons.chevron_right, size: 12),
@@ -858,7 +857,7 @@ class _PassageSheetState extends State<PassageSheet> {
               ListTile(
                 dense: true,
                 title: Text(
-                  e.value,
+                  s.bookLabel(e.key),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: e.key == book
@@ -896,6 +895,7 @@ class _PassageSheetState extends State<PassageSheet> {
         stage = 2;
       } else {
         verse = item;
+        open();
       }
     }),
   );

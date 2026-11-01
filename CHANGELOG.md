@@ -1,3 +1,11 @@
+## 2.3.3
+
+- Passage picker opens fully expanded; choose a book, chapter and verse to navigate immediately.
+- Optional Malayalam book labels retain English and Malayalam search matching.
+- Fixed Appearance transition blur composition and highlight geometry; added wax-grain texture.
+- Rounded saved-verse sorting menu and settings for renaming/deleting tags.
+- Export/import annotation backups through Android's document picker, with validation and merge semantics.
+
 ## 2.3.2
 
 - Reworked Appearance around the supplied reference: two-verse preview, flat divided sections, text-size badge, circular theme swatches and illustrated spacing options.
