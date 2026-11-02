@@ -15,6 +15,9 @@ with zipfile.ZipFile(sys.argv[1]) as archive:
         if not match:
             raise ValueError(f'Unrecognized source record: {line[:100]}')
         book, chapter, verse, text = match.groups()
+        # Known non-scripture test prefix in the publisher's Titus 1:1 record.
+        if (book, chapter, verse) == ('TIT', '1', '1'):
+            text = text.removeprefix('Testing ag live sync ')
         data.setdefault(book, {}).setdefault(chapter, []).append({'v': verse, 't': text})
     assert len(data) == 66
     assert sum(len(book) for book in data.values()) == 1189

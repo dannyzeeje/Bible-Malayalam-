@@ -1,3 +1,15 @@
+# 2.3.7 reader polish and text correction
+
+- Removed the exact English test prefix from Titus 1:1. The publisher VPL ZIP
+  currently includes this prefix too; import now removes it only at that record.
+  Remaining Malayalam wording, verse numbering and all other records retained.
+- Directional horizontal tab motion, 420 ms slide/360 ms fade reader chrome and
+  increased scroll-direction threshold. Reduced motion remains supported.
+- Minimal status filter uses smoothstep falloff in the inset plus a 6 px feather;
+  reader overlays remain separate. Paper glass surfaces use desaturated tints.
+- Copy uses Malayalam reference first, one blank line, then numbered verse bodies.
+- About and licence screens share appVersion; developer credit is dannyzeeje.
+
 # 2.3.6 reading comfort and rendering
 
 - All 50 tests pass with normal visual comparisons; static analysis is clean.

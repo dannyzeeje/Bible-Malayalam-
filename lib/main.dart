@@ -21,11 +21,14 @@ part 'dashboard.dart';
 part 'tags.dart';
 part 'history.dart';
 
+const appVersion = '2.3.7';
+const developerName = 'dannyzeeje';
+
 const ink = Color(0xff16181d);
 const accent = Color(0xff526FA3);
 const muted = Color(0xff727580);
 final attribution =
-    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible 2.3.6 · Flutter for Android\nYour bookmarks and notes are stored on this device.';
+    'Malayalam Bible 1910 edition, digitized, revised and published by volunteers of The Free Bible Foundation in the contemporary orthography.\n\nCopyright © 2015 The Free Bible Foundation.\nEdition ID: mal2015 / MALFBF.\n\nScripture text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).\nhttps://creativecommons.org/licenses/by-sa/4.0/\n\nSource: https://ebible.org/mal2015/\nhttps://ebible.org/Scriptures/mal2015_vpl.zip\n\nThe text is distributed under the same license. Its wording has not been intentionally changed. The publisher’s verse-per-line text has been converted to JSON for offline reading; section headings, notes and original formatting are not included in that source export. This app is not endorsed by the publisher.\n\nNoto Serif Malayalam font: SIL Open Font License 1.1.\n\nBible $appVersion · Flutter for Android\nYour bookmarks and notes are stored on this device.';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -188,9 +191,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       indicatorFrom +
       (-1 + 2 * tab / 3 - indicatorFrom) *
           Curves.easeOutCubic.transform(tabMotion.value);
-  late final tabOffset = tabMotion.drive(
+  double tabDirection = 1;
+  Animation<Offset> get tabOffset => tabMotion.drive(
     Tween<Offset>(
-      begin: const Offset(0, .018),
+      begin: Offset(tabDirection * .04, 0),
       end: Offset.zero,
     ).chain(CurveTween(curve: Curves.easeOutCubic)),
   );
@@ -208,6 +212,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     final from = indicatorPosition;
     setState(() {
       indicatorFrom = from;
+      tabDirection = index > tab ? 1 : -1;
       tab = index;
       visited.add(index);
     });
@@ -431,7 +436,7 @@ void showAbout(BuildContext context) => showModalBottomSheet<void>(
                                 onPressed: () => showLicensePage(
                                   context: page,
                                   applicationName: 'Bible',
-                                  applicationVersion: '2.3.0',
+                                  applicationVersion: appVersion,
                                 ),
                                 child: const Text('Open-source licenses'),
                               ),
@@ -448,7 +453,7 @@ void showAbout(BuildContext context) => showModalBottomSheet<void>(
         ),
         const SizedBox(height: 12),
         Text(
-          'Version 2.3.0',
+          'Version $appVersion · Developer: $developerName',
           style: TextStyle(fontSize: 12, color: uiMuted(sheet)),
         ),
       ],

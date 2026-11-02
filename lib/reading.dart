@@ -25,7 +25,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   Color get textColor => toneOf(context).mode == 2
       ? const Color(0xffdededb)
       : toneOf(context).mode == 1
-      ? const Color(0xff3c352b)
+      ? const Color(0xff3c3933)
       : const Color(0xff292b30);
   List<Verse> get selection =>
       s.current.where((v) => selected.contains(v.id)).toList();
@@ -317,12 +317,12 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
           excluding: !visible,
           child: AnimatedSlide(
             offset: visible ? Offset.zero : hidden,
-            duration: motionDuration(context, 220),
+            duration: motionDuration(context, 420),
             curve: Curves.easeOutCubic,
             child: AnimatedOpacity(
               key: ValueKey(name),
               opacity: visible ? 1 : 0,
-              duration: motionDuration(context, 180),
+              duration: motionDuration(context, 360),
               child: child,
             ),
           ),
@@ -485,7 +485,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
         final delta = n.scrollDelta ?? 0;
         if (delta.sign != scrollIntent.sign) scrollIntent = 0;
         scrollIntent += delta;
-        if (scrollIntent.abs() >= 22) {
+        if (scrollIntent.abs() >= 48) {
           controls = scrollIntent < 0;
           scrollIntent = 0;
         }
@@ -555,6 +555,12 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                           ),
                         ),
                       ),
+                    ),
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: StatusBarVeil(),
                     ),
                     Positioned(
                       top: 0,

@@ -354,5 +354,10 @@ class _NoteComposerState extends State<NoteComposer> {
   );
 }
 
-String copyPassage(List<Verse> verses) =>
-    '${verses.map((v) => '${v.number} ${v.text}').join('\n')}\n${passageLabel(verses)}';
+String copyPassage(List<Verse> verses) {
+  var reference = passageLabel(verses);
+  for (final book in verses.map((v) => v.book).toSet()) {
+    reference = reference.replaceAll(bookNames[book]!, malayalamBooks[book]!);
+  }
+  return '$reference\n\n${verses.map((v) => '${v.number} ${v.text}').join('\n')}';
+}
