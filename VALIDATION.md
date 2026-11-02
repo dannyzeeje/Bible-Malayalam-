@@ -1,3 +1,19 @@
+# 2.3.6 reading comfort and rendering
+
+- All 50 tests pass with normal visual comparisons; static analysis is clean.
+
+- Reader-only bouncing physics supply friction and spring edges; global UI scrolling
+  is unchanged. Short reader content stays still; glyphs are never stretched.
+- Scripture retains saved size/line-height, with even leading, natural tracking and
+  gentler contrast. Verse repaint boundaries preserve layout and saved verse keys.
+- Cached marker paths use straight rounded bounds and deterministic chalk grain.
+  Overlapping Malayalam shaping boxes are merged to prevent double pigment.
+- Regression tests verify a held dock tap is pixel-identical (no duplicate ink),
+  momentum and spring settling, stable content size, marker edges/bounds across
+  16/28/34 pt in both modes and width changes, and dark large-type readability.
+- Tests validate behavior and rendering; no physical-device GPU/frame-time profile
+  has been collected, so a universal 60/120 fps guarantee is not established.
+
 # 2.3.5 history and dock polish
 
 - History uses compact references and local visit times; removed long preview text,

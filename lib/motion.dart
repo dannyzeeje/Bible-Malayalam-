@@ -35,6 +35,28 @@ class ContentScrollPhysics extends ClampingScrollPhysics {
       super.shouldAcceptUserOffset(position);
 }
 
+/// Reader-only momentum: continuous friction and spring edges, without scaling glyphs.
+class ReaderScrollPhysics extends BouncingScrollPhysics {
+  const ReaderScrollPhysics({super.parent});
+  @override
+  ReaderScrollPhysics applyTo(ScrollPhysics? ancestor) =>
+      ReaderScrollPhysics(parent: buildParent(ancestor));
+  @override
+  bool shouldAcceptUserOffset(ScrollMetrics position) =>
+      position.maxScrollExtent > position.minScrollExtent &&
+      super.shouldAcceptUserOffset(position);
+}
+
+class ReaderScrollBehavior extends ContentScrollBehavior {
+  const ReaderScrollBehavior();
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
+}
+
 /// Tiny, contiguous Gaussian kernel mixed with the unmodified source.
 /// Mixing source pixels (not masking filter alpha) guarantees an unchanged
 /// final row and avoids clipping a separately blurred layer at the fade edge.

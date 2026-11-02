@@ -22,7 +22,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   bool? awake;
   Timer? debounce;
   Color get paper => Theme.of(context).colorScheme.surface;
-  Color get textColor => uiInk(context);
+  Color get textColor => toneOf(context).mode == 2
+      ? const Color(0xffdededb)
+      : toneOf(context).mode == 1
+      ? const Color(0xff3c352b)
+      : const Color(0xff292b30);
   List<Verse> get selection =>
       s.current.where((v) => selected.contains(v.id)).toList();
   @override
@@ -235,6 +239,9 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
       fontFamily: s.fontFamily,
       fontSize: s.fontSize,
       height: s.lineHeight,
+      leadingDistribution: TextLeadingDistribution.even,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
       color: textColor,
     );
     final content = Padding(
@@ -299,7 +306,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
       behavior: HitTestBehavior.opaque,
       onTap: () => select(v),
       onLongPress: () => select(v, extend: true),
-      child: content,
+      child: RepaintBoundary(child: content),
     );
   }
 
@@ -478,7 +485,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
         final delta = n.scrollDelta ?? 0;
         if (delta.sign != scrollIntent.sign) scrollIntent = 0;
         scrollIntent += delta;
-        if (scrollIntent.abs() >= 14) {
+        if (scrollIntent.abs() >= 22) {
           controls = scrollIntent < 0;
           scrollIntent = 0;
         }
@@ -495,11 +502,14 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
           move(d.primaryVelocity! < 0 ? 1 : -1);
         }
       },
-      child: SingleChildScrollView(
-        key: ValueKey('readerScroll'),
-        controller: scroll,
-        physics: const ContentScrollPhysics(),
-        child: chapterContent(interactive: true),
+      child: ScrollConfiguration(
+        behavior: const ReaderScrollBehavior(),
+        child: SingleChildScrollView(
+          key: ValueKey('readerScroll'),
+          controller: scroll,
+          physics: const ReaderScrollPhysics(),
+          child: chapterContent(interactive: true),
+        ),
       ),
     ),
   );
@@ -658,6 +668,7 @@ class MarkedScripture extends StatelessWidget {
         selected: selected,
         scaler: MediaQuery.textScalerOf(context),
         direction: Directionality.of(context),
+        dark: Theme.of(context).brightness == Brightness.dark,
       ),
       child: child,
     );
@@ -672,6 +683,7 @@ class ScriptureMarkPainter extends CustomPainter {
   final bool selected;
   final TextScaler scaler;
   final TextDirection direction;
+  final bool dark;
   ScriptureMarkPainter({
     required this.text,
     this.number,
@@ -680,7 +692,9 @@ class ScriptureMarkPainter extends CustomPainter {
     required this.selected,
     required this.scaler,
     required this.direction,
+    this.dark = false,
   });
+  List<(RRect, Path)>? _marks;
   List<TextBox>? _boxes;
   double? _width;
   @override
@@ -692,6 +706,7 @@ class ScriptureMarkPainter extends CustomPainter {
         textScaler: scaler,
       )..layout(maxWidth: size.width);
       _width = size.width;
+      _marks = null;
       _boxes = layout.getBoxesForSelection(
         TextSelection(
           baseOffset: number == null ? 0 : number!.length + 2,
@@ -699,70 +714,99 @@ class ScriptureMarkPainter extends CustomPainter {
         ),
       );
       layout.dispose();
+      // Shaped Malayalam can yield overlapping boxes for one line. Merge them
+      // before painting so pigment is applied once and caps stay continuous.
+      final lines = <Rect>[];
+      for (final box in _boxes!) {
+        final rect = box.toRect();
+        final index = lines.indexWhere(
+          (line) =>
+              (line.center.dy - rect.center.dy).abs() <
+              math.min(line.height, rect.height) * .25,
+        );
+        if (index < 0) {
+          lines.add(rect);
+        } else {
+          lines[index] = lines[index].expandToInclude(rect);
+        }
+      }
+      _boxes = [
+        for (final line in lines)
+          TextBox.fromLTRBD(
+            line.left,
+            line.top,
+            line.right,
+            line.bottom,
+            direction,
+          ),
+      ];
     }
-    int line = 0;
-    for (final box in _boxes!) {
-      if (box.right - box.left < 1) continue;
-      final left = box.left, right = box.right;
-      canvas.save();
-      canvas.clipRect(box.toRect());
-      final top = box.top + box.toRect().height * .12;
-      final bottom = box.bottom - box.toRect().height * .05;
-      final height = bottom - top;
-      final path = Path()..moveTo(left + 1, top + 1);
-      const steps = 18;
-      for (int i = 1; i <= steps; i++) {
-        final x = left + (right - left) * i / steps;
-        path.lineTo(x, top + math.sin(i * 1.8 + line) * .65);
-      }
-      path.quadraticBezierTo(
-        right + 3,
-        (top + bottom) / 2,
-        right - 2,
-        bottom - 1,
+    // Geometry is built once for this text/style/width, not on scrolling frames.
+    _marks ??= [
+      for (int line = 0; line < _boxes!.length; line++)
+        _buildMark(_boxes![line], line),
+    ];
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+    final fill = Paint()
+      ..color = color.withValues(
+        alpha: selected
+            ? .085
+            : dark
+            ? .20
+            : .24,
       );
-      for (int i = steps - 1; i >= 0; i--) {
-        final x = left + (right - left) * i / steps;
-        path.lineTo(x, bottom + math.sin(i * 1.3 + line + 2) * .75);
-      }
-      path.quadraticBezierTo(left - 3, (top + bottom) / 2, left + 1, top + 1);
-      path.close();
-      canvas.drawPath(
-        path,
-        Paint()..color = color.withValues(alpha: selected ? 0.085 : 0.26),
-      );
+    final chalk = Paint()..color = color.withValues(alpha: dark ? .12 : .10);
+    for (final (shape, grain) in _marks!) {
+      canvas.drawRRect(shape, fill);
       if (!selected) {
         canvas.save();
-        canvas.clipPath(path);
-        final grain = math.Random(517 + line);
-        for (int i = 0; i < (right - left) * height / 35; i++) {
-          final x = left + grain.nextDouble() * (right - left);
-          final y = top + grain.nextDouble() * height;
-          canvas.drawLine(
-            Offset(x, y),
-            Offset(x + 1 + grain.nextDouble() * 3, y + .3),
-            Paint()
-              ..color = color.withValues(alpha: .16)
-              ..strokeWidth = .6 + grain.nextDouble(),
-          );
-        }
-        // Uneven translucent pigment gives a hand-drawn crayon texture.
-        for (int band = 1; band < 8; band++) {
-          final y = top + height * band / 8;
-          canvas.drawLine(
-            Offset(left + 1, y),
-            Offset(right - 2, y + math.sin(band + line) * .7),
-            Paint()
-              ..color = color.withValues(alpha: band.isEven ? 0.075 : 0.035)
-              ..strokeWidth = 1.1
-              ..strokeCap = StrokeCap.round,
-          );
-        }
+        canvas.clipRRect(shape);
+        canvas.drawPath(grain, chalk);
         canvas.restore();
       }
-      canvas.restore();
-      line++;
     }
+    canvas.restore();
+  }
+
+  (RRect, Path) _buildMark(TextBox box, int line) {
+    final bounds = Rect.fromLTRB(
+      box.left,
+      box.top + box.toRect().height * .12,
+      box.right,
+      box.bottom - box.toRect().height * .05,
+    );
+    final shape = RRect.fromRectAndRadius(
+      bounds,
+      Radius.circular(math.min(3, bounds.height / 4)),
+    );
+    final grain = Path();
+    final random = math.Random(517 + line);
+    // Fine, deterministic chalk deposits: straight edges, uneven pigment inside.
+    final count = (bounds.width * bounds.height / 25).round();
+    for (int i = 0; i < count; i++) {
+      final x = bounds.left + random.nextDouble() * bounds.width;
+      final y = bounds.top + random.nextDouble() * bounds.height;
+      grain.addOval(
+        Rect.fromLTWH(
+          x,
+          y,
+          .4 + random.nextDouble() * 2.2,
+          .35 + random.nextDouble() * .7,
+        ),
+      );
+    }
+    for (int band = 1; band < 6; band++) {
+      grain.addRect(
+        Rect.fromLTWH(
+          bounds.left,
+          bounds.top + bounds.height * band / 6,
+          bounds.width,
+          .3,
+        ),
+      );
+    }
+    return (shape, grain);
   }
 
   @override
@@ -773,7 +817,8 @@ class ScriptureMarkPainter extends CustomPainter {
       color != old.color ||
       selected != old.selected ||
       scaler != old.scaler ||
-      direction != old.direction;
+      direction != old.direction ||
+      dark != old.dark;
 }
 
 TextSpan scriptureSpan(String text, String? number, TextStyle style) =>
