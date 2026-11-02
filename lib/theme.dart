@@ -95,17 +95,17 @@ ThemeData appTheme(
     dark
         ? const Color(0xff252525)
         : mode == 1
-        ? const Color(0xffeae2d1)
+        ? const Color(0xffeae5db)
         : const Color(0xffeae9e4),
     dark
         ? const Color(0xff181818)
         : mode == 1
-        ? const Color(0xe6fff9ec)
+        ? const Color(0xe6f7f4ed)
         : const Color(0xe8ffffff),
     dark
         ? const Color(0xff181818)
         : mode == 1
-        ? const Color(0xc2f3ead8)
+        ? const Color(0xc2f4f0e7)
         : const Color(0xb9ffffff),
     dark ? const Color(0x00ffffff) : const Color(0xc8ffffff),
   );

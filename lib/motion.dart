@@ -91,7 +91,7 @@ class _StatusBarVeilState extends State<StatusBarVeil> {
   Widget build(BuildContext context) {
     final inset = MediaQuery.paddingOf(context).top;
     if (inset <= 0) return const SizedBox.shrink();
-    final height = inset + 12;
+    final height = inset + 6;
     final dpr = MediaQuery.devicePixelRatioOf(context);
     if (shader != null) {
       shader!

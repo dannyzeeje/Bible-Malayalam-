@@ -1,3 +1,12 @@
+## 2.3.7
+
+- Removed the stray English test prefix from Titus 1:1 (also present in the downloaded VPL source); Malayalam wording and numbering retained.
+- Horizontal tab transitions follow navigation direction; reader controls hide/reveal more gradually.
+- Minimal, feathered status-area blur in the reader and less saturated Paper floating surfaces.
+- Removed default highlight colour controls from Settings.
+- Copied verses start with the Malayalam reference, then a blank line and verse text.
+- Centralized About/version labels and added developer credit: dannyzeeje.
+
 ## 2.3.6
 
 - Reader-specific friction and spring scrolling without stretching scripture.

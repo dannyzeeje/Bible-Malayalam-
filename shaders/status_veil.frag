@@ -27,6 +27,6 @@ void main() {
         * weight(x) * weight(y) / 256.0;
     }
   }
-  float fade = 0.55 * clamp(1.0 - p.y / max(uExtent, 1.0), 0.0, 1.0);
+  float fade = 0.55 * (1.0 - smoothstep(0.0, max(uExtent, 1.0), p.y));
   fragColor = mix(original, softened, fade);
 }

@@ -413,25 +413,6 @@ class SettingsPage extends StatelessWidget {
                           (v) => update(() => s.keepAwake = v),
                         ),
                       ]),
-                      settingsGroup(context, 'Highlight color', [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              for (int i = 0; i < highlightPalette.length; i++)
-                                colorChoice(
-                                  i,
-                                  s.defaultHighlight == i,
-                                  () => update(() => s.defaultHighlight = i),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ]),
                       settingsGroup(context, 'Saved data', [
                         settingsRow(
                           context,

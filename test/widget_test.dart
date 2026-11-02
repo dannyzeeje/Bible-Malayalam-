@@ -58,6 +58,11 @@ void main() {
       final s = BibleStore();
       await s.load();
       expect(s.all.length, 31098);
+      expect(s.byId['TIT.1.1']!.text, startsWith('നമ്മുടെ'));
+      expect(
+        s.all.any((v) => v.text.contains('Testing ag live sync')),
+        isFalse,
+      );
       expect(s.chapters.length, 1189);
       expect(bookNames.length, 66);
       expect(
@@ -1197,7 +1202,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: appTheme(0),
-        home: SettingsPage(store: s),
+        home: Material(child: colorChoice(1, true, () {})),
       ),
     );
     await tester.pumpAndSettle();
@@ -1206,6 +1211,14 @@ void main() {
     );
     final decoration = ring.decoration! as BoxDecoration;
     expect((decoration.border! as Border).top.color, highlightPalette[1]);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appTheme(0),
+        home: SettingsPage(store: s),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Highlight color'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('About Bible'),
       180,
@@ -1214,7 +1227,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('About Bible'));
     await tester.pumpAndSettle();
-    expect(find.text('Version 2.3.0'), findsOneWidget);
+    expect(
+      find.text('Version $appVersion · Developer: $developerName'),
+      findsOneWidget,
+    );
     expect(find.text('Edition & licenses'), findsOneWidget);
     await expectLater(
       find.byType(SheetShell),
@@ -1476,7 +1492,7 @@ void main() {
     () {
       final verses = [const Verse('PSA', 23, '1', 'യഹോവ എന്റെ ഇടയനാകുന്നു;')];
       final result = copyPassage(verses);
-      expect(result, '1 യഹോവ എന്റെ ഇടയനാകുന്നു;\nPsalms 23:1');
+      expect(result, 'സങ്കീർത്തനങ്ങൾ 23:1\n\n1 യഹോവ എന്റെ ഇടയനാകുന്നു;');
       expect(result.contains('https'), false);
       expect(result.contains('Foundation'), false);
     },
@@ -1803,7 +1819,7 @@ void main() {
       await tester.pump();
       expect(
         tester.getSize(find.byType(StatusBarVeil)).height,
-        inset == 0 ? 0 : inset + 12,
+        inset == 0 ? 0 : inset + 6,
       );
       expect(
         find.byType(BackdropFilter),
@@ -1914,6 +1930,21 @@ void main() {
     await tester.pump();
     expect(tester.getRect(indicator).left, closeTo(savedX, .1));
     await tester.pump(const Duration(milliseconds: 80));
+    expect(
+      tester
+          .widget<SlideTransition>(
+            find
+                .descendant(
+                  of: find.byType(Home),
+                  matching: find.byType(SlideTransition),
+                )
+                .first,
+          )
+          .position
+          .value
+          .dx,
+      lessThan(0),
+    );
     final movingX = tester.getRect(indicator).left;
     expect(movingX, lessThan(savedX));
     expect(tester.getRect(dock), bounds);
