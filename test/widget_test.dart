@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:word_bible/data.dart';
 import 'package:word_bible/main.dart';
@@ -1966,6 +1967,223 @@ void main() {
     await expectLater(
       find.byType(ReadingHistory),
       matchesGoldenFile('screens/history-compact-dark.png'),
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Holding a dock tab adds no second pressed highlight', (
+    tester,
+  ) async {
+    final s = BibleStore();
+    await tester.runAsync(s.load);
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: const ValueKey('held-capture'),
+        child: MaterialApp(
+          theme: appTheme(0),
+          home: Home(store: s),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved').last);
+    await tester.pumpAndSettle();
+    Future<List<int>> pixels() async => (await tester.runAsync(() async {
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('held-capture')),
+      );
+      final image = await boundary.toImage();
+      final bytes = await image.toByteData();
+      image.dispose();
+      return bytes!.buffer.asUint8List().toList();
+    }))!;
+    final before = await pixels();
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Search').last),
+    );
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(await pixels(), before);
+    await gesture.cancel();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Reader momentum settles at edges without stretching text', (
+    tester,
+  ) async {
+    Future<ScrollController> page(double height) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ScrollConfiguration(
+              behavior: const ReaderScrollBehavior(),
+              child: SingleChildScrollView(
+                controller: controller,
+                physics: const ReaderScrollPhysics(),
+                child: SizedBox(
+                  key: const ValueKey('reader-physics-content'),
+                  height: height,
+                  width: 200,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return controller;
+    }
+
+    final short = await page(40);
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 100));
+    await tester.pumpAndSettle();
+    expect(short.offset, 0);
+    final long = await page(6000);
+    final size = tester.getSize(
+      find.byKey(const ValueKey('reader-physics-content')),
+    );
+    final pull = await tester.startGesture(const Offset(100, 150));
+    await pull.moveBy(const Offset(0, 100));
+    await tester.pump();
+    expect(long.offset, lessThan(0));
+    expect(find.byType(StretchEffect), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('reader-physics-content'))),
+      size,
+    );
+    await pull.up();
+    await tester.pumpAndSettle();
+    expect(long.offset, closeTo(0, .1));
+    await tester.fling(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -100),
+      500,
+    );
+    await tester.pumpAndSettle();
+    final slow = long.offset;
+    long.jumpTo(0);
+    await tester.fling(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -100),
+      1800,
+    );
+    await tester.pumpAndSettle();
+    expect(long.offset, greaterThan(slow));
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  test(
+    'Rounded markers stay straight and inside resized Malayalam lines',
+    () async {
+      const text = 'യഹോവ എന്റെ ഇടയനാകുന്നു; എനിക്കു മുട്ടുണ്ടാകയില്ല.';
+      for (final dark in [false, true]) {
+        for (final fontSize in [16.0, 28.0, 34.0]) {
+          final style = TextStyle(
+            fontFamily: 'Malayalam',
+            fontSize: fontSize,
+            height: 1.9,
+            leadingDistribution: TextLeadingDistribution.even,
+          );
+          final painter = ScriptureMarkPainter(
+            text: text,
+            style: style,
+            color: highlightPalette[0],
+            selected: false,
+            scaler: TextScaler.noScaling,
+            direction: TextDirection.ltr,
+            dark: dark,
+          );
+          for (final width in [240.0, 180.0]) {
+            final layout = TextPainter(
+              text: TextSpan(text: text, style: style),
+              textDirection: TextDirection.ltr,
+            )..layout(maxWidth: width);
+            final boxes = layout.getBoxesForSelection(
+              const TextSelection(baseOffset: 0, extentOffset: text.length),
+            );
+            final recorder = ui.PictureRecorder();
+            final canvas = ui.Canvas(recorder);
+            painter.paint(canvas, Size(width, layout.height));
+            final picture = recorder.endRecording();
+            final image = await picture.toImage(
+              width.ceil(),
+              layout.height.ceil(),
+            );
+            final bytes = (await image.toByteData())!;
+            int alpha(int x, int y) =>
+                bytes.getUint8((y * width.ceil() + x) * 4 + 3);
+            for (final box in boxes) {
+              final tops = <int>[];
+              for (
+                int x = box.left.ceil() + 5;
+                x < box.right.floor() - 5;
+                x++
+              ) {
+                for (int y = box.top.floor(); y < box.bottom.floor(); y++) {
+                  if (alpha(x, y) > 8) {
+                    tops.add(y);
+                    break;
+                  }
+                }
+              }
+              if (tops.isNotEmpty) {
+                expect(
+                  (tops.reduce((a, b) => a > b ? a : b) -
+                      tops.reduce((a, b) => a < b ? a : b)),
+                  lessThanOrEqualTo(1),
+                );
+              }
+              final outside = box.right.ceil() + 2;
+              if (outside < width) {
+                for (int y = box.top.ceil(); y < box.bottom.floor(); y++) {
+                  if (!boxes.any(
+                    (other) => other.toRect().contains(
+                      Offset(outside.toDouble(), y.toDouble()),
+                    ),
+                  )) {
+                    expect(alpha(outside, y), 0);
+                  }
+                }
+              }
+            }
+            image.dispose();
+            picture.dispose();
+            layout.dispose();
+          }
+        }
+      }
+    },
+  );
+
+  testWidgets('Dark reader keeps rounded chalk marks readable at larger type', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(393, 852));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final s = BibleStore();
+    await tester.runAsync(s.load);
+    s.theme = 2;
+    s.fontSize = 28;
+    s.highlights.addAll(['PSA.23.1', 'PSA.23.2']);
+    s.highlightColors['PSA.23.1'] = 0;
+    s.highlightColors['PSA.23.2'] = 2;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appTheme(2),
+        home: Reader(store: s),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(Reader),
+      matchesGoldenFile('screens/dark-chalk-reader.png'),
     );
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());

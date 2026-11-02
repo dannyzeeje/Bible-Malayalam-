@@ -1,3 +1,11 @@
+## 2.3.6
+
+- Reader-specific friction and spring scrolling without stretching scripture.
+- Isolated verse repainting and cached highlight geometry/texture; existing UI, settings and verse restoration retained.
+- Softer reading contrast and balanced Malayalam leading without changing saved font size or line spacing.
+- Removed the duplicate pressed ink highlight from the moving dock selection pill.
+- Straight rounded chalk-marker highlights; overlapping shaped-text boxes are merged before painting, with light/dark pigment tuning.
+
 ## 2.3.5
 
 - Decluttered reading history to a compact, day-grouped list of references and visit times.
