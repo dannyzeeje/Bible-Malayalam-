@@ -21,7 +21,7 @@ part 'dashboard.dart';
 part 'tags.dart';
 part 'history.dart';
 
-const appVersion = '2.3.7';
+const appVersion = '2.3.8';
 const developerName = 'dannyzeeje';
 
 const ink = Color(0xff16181d);
@@ -69,7 +69,12 @@ class WordApp extends StatefulWidget {
 
 class _WordAppState extends State<WordApp> {
   late final store = widget.store ?? BibleStore();
-  late final Future<void> loading = store.all.isEmpty
+  late final Future<void> loading = ImageFilter.isShaderFilterSupported
+      ? Future.wait<void>([
+          if (store.all.isEmpty) store.load(),
+          warmLiquidGlass(),
+        ]).then((_) {})
+      : store.all.isEmpty
       ? store.load()
       : Future<void>.value();
   @override
@@ -181,11 +186,21 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
-  late final tabMotion = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 320),
-    value: 1,
-  );
+  late final tabMotion =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 320),
+        value: 1,
+      )..addStatusListener(
+        (status) => glassMotion.value = status == AnimationStatus.forward,
+      );
+  final glassMotion = ValueNotifier<bool>(false);
+  double liftFrom = 0;
+  double get indicatorLift {
+    final t = tabMotion.value;
+    return (liftFrom * (1 - t) + math.sin(math.pi * t) * .7).clamp(0, 1);
+  }
+
   double indicatorFrom = -1;
   double get indicatorPosition =>
       indicatorFrom +
@@ -203,6 +218,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     tabMotion.dispose();
+    glassMotion.dispose();
     super.dispose();
   }
 
@@ -210,8 +226,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     if (tab == index) return;
     FocusManager.instance.primaryFocus?.unfocus();
     final from = indicatorPosition;
+    final lift = indicatorLift;
     setState(() {
       indicatorFrom = from;
+      liftFrom = lift;
       tabDirection = index > tab ? 1 : -1;
       tab = index;
       visited.add(index);
@@ -237,80 +255,85 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   int tab = 0;
   BibleStore get s => widget.store;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    extendBody: true,
-    body: AppBackdrop(
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: SlideTransition(
-              position: tabOffset,
-              child: IndexedStack(
-                index: tab,
-                children: [
-                  for (int i = 0; i < pages.length; i++)
-                    TickerMode(
-                      enabled: tab == i,
-                      child: !visited.contains(i)
-                          ? const SizedBox.shrink()
-                          : i < 2
-                          ? pages[i]
-                          : SafeArea(bottom: false, child: pages[i]),
-                    ),
-                ],
+  Widget build(BuildContext context) => GlassMotionScope(
+    motion: glassMotion,
+    child: Scaffold(
+      extendBody: true,
+      body: AppBackdrop(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: SlideTransition(
+                position: tabOffset,
+                child: IndexedStack(
+                  index: tab,
+                  children: [
+                    for (int i = 0; i < pages.length; i++)
+                      TickerMode(
+                        enabled: tab == i,
+                        child: !visited.contains(i)
+                            ? const SizedBox.shrink()
+                            : i < 2
+                            ? pages[i]
+                            : SafeArea(bottom: false, child: pages[i]),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          if (tab == 0)
-            const Positioned(top: 0, left: 0, right: 0, child: StatusBarVeil()),
-        ],
+            if (tab == 0)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: StatusBarVeil(),
+              ),
+          ],
+        ),
       ),
-    ),
-    bottomNavigationBar: SafeArea(
-      top: false,
-      minimum: EdgeInsets.fromLTRB(16, 6, 16, 12),
-      child: FloatingGlass(
-        key: const ValueKey('home-dock'),
-        blur: true,
-        radius: 28,
-        padding: EdgeInsets.all(5),
-        child: LayoutBuilder(
-          builder: (context, c) => SizedBox(
-            height: math.max(
-              56,
-              MediaQuery.textScalerOf(context).scale(11) * 1.3 + 40,
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: tabMotion,
-                    builder: (context, child) => Align(
-                      alignment: Alignment(indicatorPosition, 0),
-                      child: child,
-                    ),
-                    child: FractionallySizedBox(
-                      widthFactor: .25,
-                      heightFactor: 1,
-                      child: DecoratedBox(
-                        key: const ValueKey('dock-indicator'),
-                        decoration: BoxDecoration(
-                          color: uiAccent(context).withValues(alpha: .11),
-                          borderRadius: BorderRadius.circular(999),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: EdgeInsets.fromLTRB(16, 6, 16, 12),
+        child: FloatingGlass(
+          key: const ValueKey('home-dock'),
+          blur: true,
+          radius: 28,
+          padding: EdgeInsets.all(5),
+          child: LayoutBuilder(
+            builder: (context, c) => SizedBox(
+              height: math.max(
+                56,
+                MediaQuery.textScalerOf(context).scale(11) * 1.3 + 40,
+              ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: tabMotion,
+                      builder: (context, child) => Align(
+                        alignment: Alignment(indicatorPosition, 0),
+                        child: FractionallySizedBox(
+                          widthFactor: .25,
+                          heightFactor: .92,
+                          child: GlassSelectionPill(
+                            lift: MediaQuery.disableAnimationsOf(context)
+                                ? 0
+                                : indicatorLift,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                Row(
-                  children: [
-                    nav(CupertinoIcons.square_grid_2x2, 'Library', 0),
-                    nav(CupertinoIcons.book, 'Read', 1),
-                    nav(CupertinoIcons.search, 'Search', 2),
-                    nav(CupertinoIcons.bookmark, 'Saved', 3),
-                  ],
-                ),
-              ],
+                  Row(
+                    children: [
+                      nav(CupertinoIcons.square_grid_2x2, 'Library', 0),
+                      nav(CupertinoIcons.book, 'Read', 1),
+                      nav(CupertinoIcons.search, 'Search', 2),
+                      nav(CupertinoIcons.bookmark, 'Saved', 3),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

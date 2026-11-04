@@ -1,7 +1,7 @@
 name: word_bible
 description: An offline Malayalam Bible reader with English controls.
 publish_to: none
-version: 2.3.7+23
+version: 2.3.8+24
 environment:
   sdk: ^3.10.1
 dependencies:
@@ -17,6 +17,7 @@ flutter:
   uses-material-design: true
   shaders:
     - shaders/status_veil.frag
+    - shaders/liquid_glass.frag
   assets:
     - assets/bible.json
     - assets/source_about.html

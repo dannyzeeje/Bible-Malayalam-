@@ -1,3 +1,20 @@
+# 2.3.8 floating liquid-glass treatment
+
+- All 52 tests pass with normal golden comparisons; analysis is clean.
+
+- Independently implemented Flutter/GLSL treatment inspired by Auris; no Kotlin
+  integration or source transplantation. Effects are confined to floating chrome.
+- Small rim refraction is guarded by ImageFilter.isShaderFilterSupported. Shader
+  warmup runs alongside corpus loading only where supported; frosted fallback
+  keeps unsupported/reduced-motion configurations usable.
+- Motion scopes rebuild only floating glass on scroll start/end and tab motion
+  status. Refraction is suspended during movement; scripture does not subscribe.
+- Pill travel remains continuous across direction changes; lift returns to zero
+  and does not move dock layout. No separate pressed ink highlight is added.
+- Shader tests check rim displacement and stable centre pixels. Existing tests
+  retain search state, saved verse/settings and reader geometry. Device GPU/frame
+  timing and hardware filter composition still require physical-device review.
+
 # 2.3.7 reader polish and text correction
 
 - Removed the exact English test prefix from Titus 1:1. The publisher VPL ZIP

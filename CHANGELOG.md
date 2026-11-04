@@ -1,3 +1,9 @@
+## 2.3.8
+
+- Auris-inspired floating glass: layered theme-aware tint, directional hairline rims, restrained depth and mild edge refraction on supported renderers.
+- Dock selection gently lifts/stretch-settles while preserving continuous interrupted movement, fixed layout and reduced-motion behavior.
+- Refraction is suspended during reader scrolling/tab travel, with a frosted fallback for unsupported renderers. Scripture backgrounds, accents, typography and settings are unchanged.
+
 ## 2.3.7
 
 - Removed the stray English test prefix from Titus 1:1 (also present in the downloaded VPL source); Malayalam wording and numbering retained.
