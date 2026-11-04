@@ -2221,6 +2221,93 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  test('Glass lens refracts its rim while leaving the centre stable', () async {
+    final program = await ui.FragmentProgram.fromAsset(
+      'shaders/liquid_glass.frag',
+    );
+    final sourceRecorder = ui.PictureRecorder();
+    final sourceCanvas = ui.Canvas(sourceRecorder);
+    for (int x = 0; x < 192; x += 4) {
+      sourceCanvas.drawRect(
+        Rect.fromLTWH(x.toDouble(), 0, 4, 100),
+        Paint()..color = x % 8 == 0 ? Colors.white : Colors.black,
+      );
+    }
+    final sourcePicture = sourceRecorder.endRecording();
+    final source = await sourcePicture.toImage(192, 100);
+    Future<List<int>> render(double amount) async {
+      final shader = program.fragmentShader()
+        ..setFloat(0, 192)
+        ..setFloat(1, 100)
+        ..setFloat(2, 28)
+        ..setFloat(3, amount)
+        ..setFloat(4, 1.5)
+        ..setImageSampler(0, source);
+      final recorder = ui.PictureRecorder();
+      ui.Canvas(
+        recorder,
+      ).drawRect(const Rect.fromLTWH(0, 0, 192, 100), Paint()..shader = shader);
+      final picture = recorder.endRecording();
+      final output = await picture.toImage(192, 100);
+      final bytes = (await output.toByteData())!.buffer.asUint8List().toList();
+      output.dispose();
+      picture.dispose();
+      shader.dispose();
+      return bytes;
+    }
+
+    final flat = await render(0), lens = await render(.035);
+    int changed = 0;
+    for (int x = 2; x < 18; x++) {
+      if (flat[(50 * 192 + x) * 4] != lens[(50 * 192 + x) * 4]) changed++;
+    }
+    expect(changed, greaterThan(4));
+    for (int x = 65; x < 125; x++) {
+      expect(lens[(50 * 192 + x) * 4], flat[(50 * 192 + x) * 4]);
+    }
+    source.dispose();
+    sourcePicture.dispose();
+  });
+
+  testWidgets(
+    'Liquid pill settles without moving dock layout and honours reduced motion',
+    (tester) async {
+      final s = BibleStore();
+      await tester.runAsync(s.load);
+      for (final reduced in [false, true]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: appTheme(2),
+            home: MediaQuery(
+              data: MediaQueryData(disableAnimations: reduced),
+              child: Home(store: s),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final dock = tester.getRect(find.byKey(const ValueKey('home-dock')));
+        await tester.tap(find.text('Saved').last);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        final pill = tester.widget<GlassSelectionPill>(
+          find.byType(GlassSelectionPill),
+        );
+        expect(pill.lift, reduced ? 0 : greaterThan(0));
+        expect(tester.getRect(find.byKey(const ValueKey('home-dock'))), dock);
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<GlassSelectionPill>(find.byType(GlassSelectionPill))
+              .lift,
+          closeTo(0, .001),
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      }
+    },
+  );
+
   testWidgets('Reduced motion disables pill animation', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

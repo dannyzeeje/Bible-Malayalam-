@@ -14,6 +14,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   final selected = <String>{};
   String chapterKey = '';
   String? anchor;
+  final glassMotion = ValueNotifier<bool>(false);
   final chromeVisible = ValueNotifier<bool>(true);
   bool get controls => chromeVisible.value;
   set controls(bool value) => chromeVisible.value = value;
@@ -68,6 +69,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     scroll.dispose();
     chromeVisible.dispose();
+    glassMotion.dispose();
     super.dispose();
   }
 
@@ -478,6 +480,8 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
 
   Widget readingScroll() => NotificationListener<ScrollNotification>(
     onNotification: (n) {
+      if (n is ScrollStartNotification) glassMotion.value = true;
+      if (n is ScrollEndNotification) glassMotion.value = false;
       if (s.autoHide &&
           selected.isEmpty &&
           n is ScrollUpdateNotification &&
@@ -539,65 +543,68 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
               ),
               builder: (context, showChrome, page) {
                 final visible = showChrome || selected.isNotEmpty;
-                return Stack(
-                  children: [
-                    Positioned.fill(child: page!),
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: AnimatedOpacity(
-                          key: ValueKey('readerEdgeBlur'),
-                          opacity: visible && s.blurStrength > 0 ? 1 : 0,
-                          duration: motionDuration(context, 200),
-                          child: ReaderEdgeFade(
-                            paper: paper,
-                            topExtent: top + 120,
-                            bottomExtent: bottom + 120,
+                return GlassMotionScope(
+                  motion: glassMotion,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: page!),
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: AnimatedOpacity(
+                            key: ValueKey('readerEdgeBlur'),
+                            opacity: visible && s.blurStrength > 0 ? 1 : 0,
+                            duration: motionDuration(context, 200),
+                            child: ReaderEdgeFade(
+                              paper: paper,
+                              topExtent: top + 120,
+                              bottomExtent: bottom + 120,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: StatusBarVeil(),
-                    ),
-                    Positioned(
-                      top: 0,
-                      left: 18,
-                      right: 18,
-                      child: chrome(
-                        'readerTopControls',
-                        visible,
-                        Offset(0, -1.2),
-                        Padding(
-                          padding: EdgeInsets.only(top: top + 8, bottom: 8),
-                          child: topBar(),
-                        ),
+                      const Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: StatusBarVeil(),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      left: 18,
-                      right: 18,
-                      child: chrome(
-                        'readerBottomControls',
-                        visible,
-                        Offset(0, 1.8),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: bottom + 12),
-                          child: FloatingGlass(
-                            blur: true,
-                            key: const ValueKey('reader-bottom-glass'),
-                            radius: 28,
-                            dark: s.theme == 2,
-                            padding: EdgeInsets.all(6),
-                            child: bottomBar(),
+                      Positioned(
+                        top: 0,
+                        left: 18,
+                        right: 18,
+                        child: chrome(
+                          'readerTopControls',
+                          visible,
+                          Offset(0, -1.2),
+                          Padding(
+                            padding: EdgeInsets.only(top: top + 8, bottom: 8),
+                            child: topBar(),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 0,
+                        left: 18,
+                        right: 18,
+                        child: chrome(
+                          'readerBottomControls',
+                          visible,
+                          Offset(0, 1.8),
+                          Padding(
+                            padding: EdgeInsets.only(bottom: bottom + 12),
+                            child: FloatingGlass(
+                              blur: true,
+                              key: const ValueKey('reader-bottom-glass'),
+                              radius: 28,
+                              dark: s.theme == 2,
+                              padding: EdgeInsets.all(6),
+                              child: bottomBar(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
