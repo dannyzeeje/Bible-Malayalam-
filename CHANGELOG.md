@@ -1,3 +1,8 @@
+## 2.3.9
+
+- Reverted the 2.3.8 liquid-glass changes, restoring the 2.3.7 interface and motion.
+- Version code increased to 25 so this rollback installs over 2.3.8 with local data preserved.
+
 ## 2.3.8
 
 - Auris-inspired floating glass: layered theme-aware tint, directional hairline rims, restrained depth and mild edge refraction on supported renderers.

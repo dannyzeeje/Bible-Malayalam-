@@ -128,35 +128,8 @@ class _StatusBarVeilState extends State<StatusBarVeil> {
   }
 }
 
-FragmentProgram? _glassProgram;
-Future<void>? _glassWarmup;
-Future<void> warmLiquidGlass() => _glassWarmup ??= () async {
-  if (!ImageFilter.isShaderFilterSupported) return;
-  try {
-    _glassProgram = await FragmentProgram.fromAsset(
-      'shaders/liquid_glass.frag',
-    );
-  } catch (_) {
-    /* Frosted glass remains available. */
-  }
-}();
-
-/// Only floating chrome listens to this; scripture never rebuilds for glass motion.
-class GlassMotionScope extends InheritedNotifier<ValueNotifier<bool>> {
-  const GlassMotionScope({
-    super.key,
-    required ValueNotifier<bool> motion,
-    required super.child,
-  }) : super(notifier: motion);
-  static bool moving(BuildContext context) =>
-      context
-          .dependOnInheritedWidgetOfExactType<GlassMotionScope>()
-          ?.notifier
-          ?.value ??
-      false;
-}
-
-class FloatingGlass extends StatefulWidget {
+/// Floating surfaces alone sample the content behind them.
+class FloatingGlass extends StatelessWidget {
   final Widget child;
   final bool? dark;
   final bool blur;
@@ -171,147 +144,17 @@ class FloatingGlass extends StatefulWidget {
     this.padding = EdgeInsets.zero,
   });
   @override
-  State<FloatingGlass> createState() => _FloatingGlassState();
-}
-
-class _FloatingGlassState extends State<FloatingGlass> {
-  FragmentShader? shader;
-  @override
-  void initState() {
-    super.initState();
-    if (widget.blur && _glassProgram != null) {
-      shader = _glassProgram!.fragmentShader();
-    } else if (widget.blur) {
-      warmLiquidGlass().then((_) {
-        if (mounted && _glassProgram != null) {
-          setState(() => shader = _glassProgram!.fragmentShader());
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    shader?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final moving = GlassMotionScope.moving(context);
-    final reduced = MediaQuery.disableAnimationsOf(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final lens = widget.blur && shader != null && !moving && !reduced;
-    if (lens) {
-      shader!
-        ..setFloat(2, widget.radius * dpr)
-        ..setFloat(3, .035)
-        ..setFloat(4, 1.5 * dpr);
-    }
-    final frostSigma = shader != null && !reduced ? 1.1 : 8.0;
-    final surface = toneOf(context).background;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(widget.radius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? .10 : .025),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(widget.radius),
-        child: BackdropFilter(
-          enabled: widget.blur,
-          filter: lens
-              ? ImageFilter.shader(shader!)
-              : ImageFilter.blur(sigmaX: frostSigma, sigmaY: frostSigma),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(widget.radius),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.alphaBlend(
-                    Colors.white.withValues(alpha: dark ? .065 : .16),
-                    surface.withValues(alpha: widget.blur ? .76 : 1),
-                  ),
-                  surface.withValues(alpha: widget.blur ? .66 : 1),
-                ],
-              ),
-            ),
-            child: CustomPaint(
-              foregroundPainter: GlassRimPainter(widget.radius, dark),
-              child: Material(
-                type: MaterialType.transparency,
-                child: Padding(padding: widget.padding, child: widget.child),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class GlassRimPainter extends CustomPainter {
-  final double radius;
-  final bool dark;
-  const GlassRimPainter(this.radius, this.dark);
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bounds = (Offset.zero & size).deflate(.65);
-    if (bounds.isEmpty) return;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(bounds, Radius.circular(radius)),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = .8
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: dark ? .30 : .9),
-            Colors.white.withValues(alpha: .035),
-            Colors.white.withValues(alpha: dark ? .13 : .45),
-          ],
-          stops: const [0, .55, 1],
-        ).createShader(bounds),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant GlassRimPainter old) =>
-      radius != old.radius || dark != old.dark;
-}
-
-class GlassSelectionPill extends StatelessWidget {
-  final double lift;
-  const GlassSelectionPill({super.key, required this.lift});
-  @override
-  Widget build(BuildContext context) => Transform.scale(
-    scaleX: 1 + lift * .07,
-    scaleY: 1 + lift * .045,
-    child: DecoratedBox(
-      key: const ValueKey('dock-indicator'),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: .12 + .12 * lift),
-          width: .65,
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            uiAccent(context).withValues(alpha: .17 + .04 * lift),
-            uiAccent(context).withValues(alpha: .09 + .02 * lift),
-          ],
-        ),
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(radius),
+    child: BackdropFilter(
+      enabled: blur,
+      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+      child: GlassPanel(
+        radius: radius,
+        padding: padding,
+        translucent: true,
+        glassOpacity: blur ? .68 : null,
+        child: child,
       ),
     ),
   );
