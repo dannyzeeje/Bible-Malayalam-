@@ -21,7 +21,7 @@ part 'dashboard.dart';
 part 'tags.dart';
 part 'history.dart';
 
-const appVersion = '2.3.9';
+const appVersion = '2.3.10';
 const developerName = 'dannyzeeje';
 
 const ink = Color(0xff16181d);
@@ -165,8 +165,12 @@ Future<void> openReader(
   BuildContext context,
   BibleStore store, {
   Verse? verse,
+  bool recordSelection = false,
 }) async {
-  if (verse != null) store.go(verse.book, verse.chapter, verse.number);
+  if (verse != null) {
+    if (recordSelection) store.recordVerseSelection([verse.id]);
+    store.go(verse.book, verse.chapter, verse.number);
+  }
   await Navigator.of(
     context,
   ).push(CupertinoPageRoute<void>(builder: (_) => Reader(store: store)));
@@ -605,7 +609,7 @@ Widget verseCard(
   padding: EdgeInsets.only(bottom: 12),
   child: InkWell(
     borderRadius: BorderRadius.circular(16),
-    onTap: () => openReader(context, s, verse: v),
+    onTap: () => openReader(context, s, verse: v, recordSelection: true),
     onLongPress: () => verseActions(context, s, v),
     child: surface(
       Column(

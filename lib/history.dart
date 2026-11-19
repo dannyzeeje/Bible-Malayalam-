@@ -7,134 +7,242 @@ void openHistory(BuildContext context, BibleStore store) => Navigator.of(
 class ReadingHistory extends StatelessWidget {
   final BibleStore store;
   const ReadingHistory({super.key, required this.store});
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: store,
     builder: (context, _) {
       final visits = store.recentHistory;
-      final now = store.clock();
+      final now = store.clock().toLocal();
+      final localizations = MaterialLocalizations.of(context);
       String dayLabel(DateTime date) {
         final local = date.toLocal();
         final day = DateTime(local.year, local.month, local.day);
-        final today = DateTime(now.year, now.month, now.day);
-        if (day == today) return 'Today';
-        if (day == DateTime(today.year, today.month, today.day - 1)) {
+        if (day == DateTime(now.year, now.month, now.day)) return 'Today';
+        if (day == DateTime(now.year, now.month, now.day - 1)) {
           return 'Yesterday';
         }
-        return '${local.day}/${local.month}/${local.year}';
+        return localizations.formatMediumDate(local);
       }
 
       return Scaffold(
-        body: Material(
-          color: toneOf(context).background,
-          child: SafeArea(
-            child: Column(
-              children: [
-                pageHeader(
-                  context,
-                  'History',
-                  trailing: Text(
-                    '5 days',
-                    style: TextStyle(fontSize: 12, color: uiMuted(context)),
-                  ),
-                ),
-                Expanded(
-                  child: visits.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              'Your recently read verses will appear here.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: uiMuted(context)),
-                            ),
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  pageHeader(context, 'History'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          'Selected verses',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: uiInk(context),
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
-                          itemCount: visits.length,
-                          itemBuilder: (context, index) {
-                            final visit = visits[index],
-                                verse = store.byId[visit.verseId]!;
-                            final label = dayLabel(visit.visitedAt);
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (index == 0 ||
-                                    label !=
-                                        dayLabel(visits[index - 1].visitedAt))
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 10,
-                                      bottom: 12,
-                                    ),
-                                    child: Text(
-                                      label,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: uiMuted(context),
+                        ),
+                        Text(
+                          'Last 5 days',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: uiMuted(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: visits.isEmpty
+                        ? const _EmptyHistory()
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                            itemCount: visits.length,
+                            itemBuilder: (context, index) {
+                              final visit = visits[index];
+                              final verse = store.byId[visit.verseId]!;
+                              final label = dayLabel(visit.visitedAt);
+                              final startsDay =
+                                  index == 0 ||
+                                  label !=
+                                      dayLabel(visits[index - 1].visitedAt);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (startsDay)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top: index == 0 ? 8 : 16,
+                                        bottom: 8,
                                       ),
-                                    ),
-                                  ),
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(14),
-                                  onTap: () async {
-                                    await openReader(
-                                      context,
-                                      store,
-                                      verse: verse,
-                                    );
-                                    if (context.mounted) store.changed();
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                      horizontal: 2,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            store.verseLabel(verse),
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Text(
-                                          MaterialLocalizations.of(
-                                            context,
-                                          ).formatTimeOfDay(
-                                            TimeOfDay.fromDateTime(
-                                              visit.visitedAt.toLocal(),
-                                            ),
-                                            alwaysUse24HourFormat:
-                                                MediaQuery.alwaysUse24HourFormatOf(
-                                                  context,
-                                                ),
-                                          ),
+                                      child: Semantics(
+                                        header: true,
+                                        child: Text(
+                                          label,
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
                                             color: uiMuted(context),
                                           ),
                                         ),
-                                      ],
+                                      ),
+                                    ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: _HistoryVerseCard(
+                                      reference: store.verseLabel(verse),
+                                      time: localizations.formatTimeOfDay(
+                                        TimeOfDay.fromDateTime(
+                                          visit.visitedAt.toLocal(),
+                                        ),
+                                        alwaysUse24HourFormat:
+                                            MediaQuery.alwaysUse24HourFormatOf(
+                                              context,
+                                            ),
+                                      ),
+                                      onTap: () => openReader(
+                                        context,
+                                        store,
+                                        verse: verse,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                ),
-              ],
+                                ],
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     },
+  );
+}
+
+class _HistoryVerseCard extends StatelessWidget {
+  final String reference, time;
+  final VoidCallback onTap;
+  const _HistoryVerseCard({
+    required this.reference,
+    required this.time,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Color.alphaBlend(toneOf(context).panelA, toneOf(context).background),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: uiAccent(context).withValues(alpha: .10),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: AppIcon(
+                CupertinoIcons.book,
+                size: 17,
+                color: uiAccent(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reference,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    time,
+                    style: TextStyle(fontSize: 12, color: uiMuted(context)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: uiMuted(context),
+              textDirection: Directionality.of(context),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _EmptyHistory extends StatelessWidget {
+  const _EmptyHistory();
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 24, 28, 60),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: uiAccent(context).withValues(alpha: .10),
+                  child: AppIcon(
+                    CupertinoIcons.clock,
+                    size: 25,
+                    color: uiAccent(context),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No selected verses yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: uiInk(context),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  'Tap a verse while reading to add it here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: uiMuted(context)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 }

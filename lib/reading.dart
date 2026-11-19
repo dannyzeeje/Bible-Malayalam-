@@ -38,7 +38,6 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     syncAwake();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      s.recordVisit();
       save(context, s);
     });
   }
@@ -92,7 +91,6 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
             box.localToGlobal(Offset.zero).dy >= edge) {
           if (s.verse != e.key) {
             s.verse = e.key;
-            s.recordVisit();
             save(context, s);
           }
           break;
@@ -143,6 +141,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   void select(Verse v, {bool extend = false}) {
     debounce?.cancel();
     if (s.haptics) HapticFeedback.selectionClick();
+    final previousSelection = Set.of(selected);
     setState(() {
       controls = true;
       if ((extend || rangeMode) && anchor != null) {
@@ -165,6 +164,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
         rangeMode = false;
       }
     });
+    final added = selected.difference(previousSelection);
+    if (added.isNotEmpty) {
+      s.recordVerseSelection(added);
+      save(context, s);
+    }
   }
 
   void move(int delta) {

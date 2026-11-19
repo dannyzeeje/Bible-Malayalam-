@@ -1,3 +1,9 @@
+## 2.3.10
+
+- History records selected verses. Reading, scrolling and opening chapters still save your reading position.
+- Redesigned History with date-grouped verse cards and guidance when the list is empty.
+- History starts fresh on upgrade because older entries could also come from scrolling or opening chapters.
+
 ## 2.3.9
 
 - Reverted the 2.3.8 liquid-glass changes, restoring the 2.3.7 interface and motion.
