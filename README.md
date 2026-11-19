@@ -37,6 +37,6 @@ reading card, square plan covers, larger headings and a translucent tab bar.
 Tab transitions and cover press feedback respect the system reduced-motion setting.
 
 Reading history is available from the home clock button and Settings → Saved data.
-It keeps visited verses for today and the previous four days on this device.
+It keeps explicitly selected verses for today and the previous four days on this device.
 The selected Malayalam font also applies to Malayalam interface labels. Chilanka
 and Baloo Chettan 2 are bundled with their SIL OFL licences for offline use.

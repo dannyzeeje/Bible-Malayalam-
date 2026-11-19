@@ -577,7 +577,7 @@ Future<void> picker(
   BibleStore s, {
   VoidCallback? onGo,
 }) async {
-  final target = await showModalBottomSheet<Verse>(
+  final target = await showModalBottomSheet<(Verse, {bool selected})>(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
@@ -585,7 +585,9 @@ Future<void> picker(
     builder: (_) => PassageSheet(store: s),
   );
   if (target != null) {
-    s.go(target.book, target.chapter, target.number);
+    final (verse, :selected) = target;
+    if (selected) s.recordVerseSelection([verse.id]);
+    s.go(verse.book, verse.chapter, verse.number);
     if (context.mounted) await save(context, s);
     onGo?.call();
   }
@@ -627,10 +629,10 @@ class _PassageSheetState extends State<PassageSheet> {
     FocusScope.of(context).unfocus();
   }
 
-  void open() => Navigator.pop(
-    context,
+  void open() => Navigator.pop(context, (
     verses.firstWhere((v) => v.number == verse, orElse: () => verses.first),
-  );
+    selected: true,
+  ));
   @override
   Widget build(BuildContext context) {
     final refs = query.contains(RegExp(r'\d')) ? s.search(query) : <Verse>[];
@@ -724,7 +726,10 @@ class _PassageSheetState extends State<PassageSheet> {
                           onChanged: (v) => setState(() => query = v.trim()),
                           onSubmitted: (_) {
                             if (refs.isNotEmpty) {
-                              Navigator.pop(context, refs.first);
+                              Navigator.pop(context, (
+                                refs.first,
+                                selected: query.contains(':'),
+                              ));
                             }
                           },
                           decoration: const InputDecoration(
@@ -823,7 +828,7 @@ class _PassageSheetState extends State<PassageSheet> {
                 color: uiInk(context),
               ),
             ),
-            onTap: () => Navigator.pop(context, refs.first),
+            onTap: () => Navigator.pop(context, (refs.first, selected: true)),
           ),
         for (final b in matches)
           ListTile(

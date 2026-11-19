@@ -217,15 +217,16 @@ class BibleStore extends ChangeNotifier {
     return List.unmodifiable(_history.reversed);
   }
 
-  void recordVisit() {
-    final id = '$book.$chapter.$verse';
-    if (!byId.containsKey(id)) return;
+  void recordVerseSelection(Iterable<String> ids) {
     final now = clock();
+    final today = _day(now);
     recentHistory;
-    _history.removeWhere(
-      (v) => v.verseId == id && _day(v.visitedAt) == _day(now),
-    );
-    _history.add(VerseVisit(id, now));
+    for (final id in ids.where(byId.containsKey)) {
+      _history.removeWhere(
+        (v) => v.verseId == id && _day(v.visitedAt) == today,
+      );
+      _history.add(VerseVisit(id, now));
+    }
   }
 
   static const storage = MethodChannel('word.bible/storage');
@@ -313,8 +314,10 @@ class BibleStore extends ChangeNotifier {
     verseOrder.addEntries(
       all.asMap().entries.map((e) => MapEntry(e.value.id, e.key)),
     );
-    for (final entry
-        in prefs['history'] is List ? prefs['history'] as List : const []) {
+    // Older history mixed deliberate selections with passive reading positions.
+    final savedSelections = prefs['selectedVerseHistory'];
+    _history.clear();
+    for (final entry in savedSelections is List ? savedSelections : const []) {
       if (entry is! Map ||
           entry['verse'] is! String ||
           entry['at'] is! String) {
@@ -325,7 +328,6 @@ class BibleStore extends ChangeNotifier {
         _history.add(VerseVisit(entry['verse'], date.toLocal()));
       }
     }
-    _history.sort((a, b) => a.visitedAt.compareTo(b.visitedAt));
     recentHistory;
     bookmarks = (prefs['bookmarks'] ?? [])
         .cast<String>()
@@ -438,7 +440,7 @@ class BibleStore extends ChangeNotifier {
   String get location => '${bookLabel(book)} $chapter';
   int count(String b) => _chapterCounts[b] ?? 0;
   Map<String, dynamic> get stateData => {
-    'history': [
+    'selectedVerseHistory': [
       for (final visit in recentHistory.reversed)
         {
           'verse': visit.verseId,
@@ -713,7 +715,6 @@ class BibleStore extends ChangeNotifier {
     book = b;
     chapter = c;
     verse = v;
-    recordVisit();
     notifyListeners();
   }
 

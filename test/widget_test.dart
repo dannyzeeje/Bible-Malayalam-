@@ -180,17 +180,24 @@ void main() {
     'History keeps five local calendar days, deduplicates and survives reload',
     () async {
       var now = DateTime(2026, 11, 1, 9);
+      state = jsonEncode({
+        'history': [
+          {'verse': 'MAT.8.29', 'at': now.toIso8601String()},
+        ],
+      });
       final store = BibleStore(clock: () => now);
       await store.load();
       store.go('JOH', 3, '16');
+      expect(store.recentHistory, isEmpty);
+      store.recordVerseSelection(['JOH.3.16']);
       now = now.add(const Duration(hours: 1));
-      store.go('JOH', 3, '16');
+      store.recordVerseSelection(['JOH.3.16']);
       expect(store.recentHistory.length, 1);
       now = DateTime(2026, 11, 2, 0, 1);
-      store.go('JOH', 3, '16');
+      store.recordVerseSelection(['JOH.3.16']);
       expect(store.recentHistory.length, 2);
       now = DateTime(2026, 11, 5, 23, 59);
-      store.go('PSA', 23, '1');
+      store.recordVerseSelection(['PSA.23.1']);
       expect(store.recentHistory.length, 3);
       await store.persist();
       final loaded = BibleStore(clock: () => now);
@@ -210,9 +217,12 @@ void main() {
   testWidgets(
     'Selected Malayalam font updates UI fallback and history reopens a verse',
     (tester) async {
-      final store = BibleStore(clock: () => DateTime(2026, 11, 2, 10, 5));
+      final selectedAt = DateTime(2026, 11, 2, 10, 5);
+      var now = selectedAt;
+      final store = BibleStore(clock: () => now);
       await tester.runAsync(store.load);
       store.go('JOH', 3, '16');
+      store.recordVerseSelection(['JOH.3.16']);
       store.malayalamNames = true;
       await tester.pumpWidget(WordApp(store: store));
       await tester.pumpAndSettle();
@@ -243,10 +253,12 @@ void main() {
         find.byType(ReadingHistory),
         matchesGoldenFile('screens/reading-history.png'),
       );
+      now = selectedAt.add(const Duration(hours: 1));
       await tester.tap(find.text('${malayalamBooks['JOH']} 3:16'));
       await tester.pumpAndSettle();
       expect(find.byType(Reader), findsOneWidget);
       expect(store.verse, '16');
+      expect(store.recentHistory.single.visitedAt, selectedAt);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
@@ -278,6 +290,7 @@ void main() {
     expect(find.text('John 3:16', skipOffstage: true).last, findsOneWidget);
     await tester.tap(find.text('John 3:16').last);
     await tester.pumpAndSettle();
+    expect(s.recentHistory.single.verseId, 'JOH.3.16');
     expect(find.text('യോഹന്നാൻ 3'), findsNWidgets(2));
     expect(find.byTooltip('Go to passage'), findsOneWidget);
     await tester.tap(find.byTooltip('Go to passage'));
@@ -356,11 +369,15 @@ void main() {
       );
       await tester.pumpAndSettle();
       final size = tester.getSize(find.byKey(const ValueKey('readerScroll')));
+      expect(s.recentHistory, isEmpty);
       await tester.drag(
         find.byKey(const ValueKey('readerScroll')),
         const Offset(0, -200),
       );
       await tester.pumpAndSettle();
+      expect(s.verse, isNot('1'));
+      expect(jsonDecode(state)['verse'], s.verse);
+      expect(s.recentHistory, isEmpty);
       expect(
         tester
             .widget<AnimatedOpacity>(
@@ -388,6 +405,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(scroll.offset, closeTo(offset, .1));
       expect(find.byKey(const ValueKey('selectionBar')), findsOneWidget);
+      final selected = s.recentHistory.single.verseId;
+      expect(selected, startsWith('PSA.23.'));
+      expect(
+        jsonDecode(state)['selectedVerseHistory'].single['verse'],
+        selected,
+      );
       await tester.tap(find.byTooltip('Clear selection'));
       await tester.pumpAndSettle();
       expect(
@@ -447,11 +470,23 @@ void main() {
       expect(s.book, 'JOH');
       expect(s.chapter, 3);
       expect(s.verse, '16');
+      expect(s.recentHistory.map((visit) => visit.verseId), [
+        'JOH.3.16',
+        selected,
+      ]);
       final y = tester
           .getTopLeft(find.textContaining(s.byId['JOH.3.16']!.text).first)
           .dy;
       expect(y, greaterThanOrEqualTo(55));
       expect(y, lessThan(760));
+      await tester.tap(find.byTooltip('Next chapter'));
+      await tester.pumpAndSettle();
+      expect(s.chapter, 4);
+      expect(jsonDecode(state)['chapter'], 4);
+      expect(s.recentHistory.map((visit) => visit.verseId), [
+        'JOH.3.16',
+        selected,
+      ]);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
@@ -1970,19 +2005,12 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('History uses compact references and times grouped by day', (
-    tester,
-  ) async {
+  testWidgets('History shows selection cards grouped by day', (tester) async {
     await tester.binding.setSurfaceSize(const Size(393, 852));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     var now = DateTime(2026, 11, 1, 8, 30);
     final s = BibleStore(clock: () => now);
     await tester.runAsync(s.load);
-    s.go('PSA', 23, '1');
-    now = DateTime(2026, 11, 1, 9, 15);
-    s.go('PSA', 23, '2');
-    now = DateTime(2026, 11, 2, 10, 5);
-    s.go('PSA', 24, '1');
     await tester.pumpWidget(
       MaterialApp(
         theme: appTheme(2),
@@ -1991,6 +2019,15 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('History'), findsOneWidget);
+    expect(find.text('No selected verses yet'), findsOneWidget);
+    s.recordVerseSelection(['PSA.23.1']);
+    now = DateTime(2026, 11, 1, 9, 15);
+    s.recordVerseSelection(['PSA.23.2']);
+    now = DateTime(2026, 11, 2, 10, 5);
+    s.recordVerseSelection(['PSA.24.1']);
+    s.changed();
+    await tester.pumpAndSettle();
+    expect(find.text('No selected verses yet'), findsNothing);
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('Yesterday'), findsOneWidget);
     expect(find.text(s.byId['PSA.23.1']!.text), findsNothing);
