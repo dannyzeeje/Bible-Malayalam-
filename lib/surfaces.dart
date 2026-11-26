@@ -134,7 +134,7 @@ Widget pageHeader(BuildContext context, String title, {Widget? trailing}) =>
       child: Row(
         children: [
           glassIcon(
-            CupertinoIcons.chevron_left,
+            LucideIcons.chevronLeftDir,
             'Back',
             () => Navigator.pop(context),
           ),
@@ -175,7 +175,7 @@ class PlanDetail extends StatelessWidget {
                   plan.title,
                   trailing: plan.custom
                       ? glassIcon(
-                          CupertinoIcons.trash,
+                          LucideIcons.trash2,
                           'Delete plan',
                           () => deleteCustomPlan(context, store, plan),
                         )
@@ -242,9 +242,7 @@ class PlanDetail extends StatelessWidget {
             save(context, store);
           },
           icon: AppIcon(
-            done.contains(day)
-                ? CupertinoIcons.checkmark_circle_fill
-                : CupertinoIcons.circle,
+            done.contains(day) ? LucideIcons.circleCheck : LucideIcons.circle,
             color: uiAccent(context),
             size: 23,
           ),
@@ -267,7 +265,7 @@ class PlanDetail extends StatelessWidget {
           ),
         ),
         trailing: AppIcon(
-          CupertinoIcons.chevron_right,
+          LucideIcons.chevronRightDir,
           size: 13,
           color: uiMuted(context),
         ),
@@ -347,7 +345,7 @@ Future<void> showPlanDay(
                     s.completePlanDay(plan, day, true);
                     save(context, s);
                     Navigator.pop(sheet);
-                  }, icon: CupertinoIcons.checkmark),
+                  }, icon: LucideIcons.check),
                 ),
               ],
             ),
@@ -389,7 +387,7 @@ class SettingsPage extends StatelessWidget {
                         ),
                         settingsRow(
                           context,
-                          CupertinoIcons.textformat,
+                          LucideIcons.type,
                           'Text & layout',
                           value:
                               '${readingFonts[s.fontFamily]} · ${s.fontSize.round()}',
@@ -416,25 +414,25 @@ class SettingsPage extends StatelessWidget {
                       settingsGroup(context, 'Saved data', [
                         settingsRow(
                           context,
-                          CupertinoIcons.clock,
+                          LucideIcons.clock,
                           'Reading history',
                           onTap: () => openHistory(context, s),
                         ),
                         settingsRow(
                           context,
-                          CupertinoIcons.tag,
+                          LucideIcons.tag,
                           'Manage tags',
                           onTap: () => manageTags(context, s),
                         ),
                         settingsRow(
                           context,
-                          CupertinoIcons.square_arrow_up,
+                          LucideIcons.upload,
                           'Back up saved data',
                           onTap: () => backupData(context, s, false),
                         ),
                         settingsRow(
                           context,
-                          CupertinoIcons.square_arrow_down,
+                          LucideIcons.download,
                           'Restore saved data',
                           onTap: () => backupData(context, s, true),
                         ),
@@ -452,7 +450,7 @@ class SettingsPage extends StatelessWidget {
                         ),
                         settingsRow(
                           context,
-                          CupertinoIcons.calendar,
+                          LucideIcons.calendar,
                           'Reading plans',
                           onTap: () => Navigator.push(
                             context,
@@ -463,7 +461,7 @@ class SettingsPage extends StatelessWidget {
                         ),
                         settingsRow(
                           context,
-                          CupertinoIcons.info_circle,
+                          LucideIcons.info,
                           'About Bible',
                           onTap: () => showAbout(context),
                         ),
@@ -550,11 +548,7 @@ Widget settingsRow(
             ),
           ),
         const SizedBox(width: 10),
-        AppIcon(
-          CupertinoIcons.chevron_right,
-          size: 12,
-          color: uiMuted(context),
-        ),
+        AppIcon(LucideIcons.chevronRightDir, size: 12, color: uiMuted(context)),
       ],
     ),
   ),
@@ -675,7 +669,7 @@ Future<void> manageTags(
                           children: [
                             IconButton(
                               tooltip: 'Rename $tag',
-                              icon: const Icon(CupertinoIcons.pencil),
+                              icon: const AppIcon(LucideIcons.pencil),
                               onPressed: () async {
                                 var edited = tag;
                                 final name = await showDialog<String>(
@@ -711,7 +705,7 @@ Future<void> manageTags(
                             ),
                             IconButton(
                               tooltip: 'Delete $tag',
-                              icon: const Icon(CupertinoIcons.trash),
+                              icon: const AppIcon(LucideIcons.trash2),
                               onPressed: () async {
                                 final yes = await showDialog<bool>(
                                   context: context,

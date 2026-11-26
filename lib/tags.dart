@@ -92,7 +92,7 @@ class _BookmarkTagsSheetState extends State<BookmarkTagsSheet> {
                 suffixIcon: IconButton(
                   tooltip: 'Add tag',
                   onPressed: () => add(input.text),
-                  icon: const AppIcon(CupertinoIcons.plus, size: 18),
+                  icon: const AppIcon(LucideIcons.plus, size: 18),
                 ),
               ),
             ),

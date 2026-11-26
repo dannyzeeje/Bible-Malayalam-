@@ -20,6 +20,10 @@ void main() {
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader('packages/lucide_icons_flutter/Lucide')..addFont(
+          rootBundle.load('packages/lucide_icons_flutter/assets/lucide.ttf'),
+        ))
+        .load();
     for (final entry in {
       'Inter': 'Inter.ttf',
       'Editorial': 'Lora.ttf',
@@ -1553,10 +1557,108 @@ void main() {
       find.byKey(const ValueKey('reader-bottom-glass')),
     );
     expect(dock.blur, isTrue);
+    expect(dock.readerStyle, isTrue);
     expect(dock.radius, 28);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
   });
+
+  testWidgets('Reader auto-scroll uses saved speed and gives control back', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(393, 650);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final store = BibleStore();
+    await tester.runAsync(store.load);
+    store.go('MAT', 8);
+    store.autoHide = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: appTheme(0),
+        home: Reader(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final reader = find.byKey(const ValueKey('readerScroll'));
+    final scroll = tester.widget<SingleChildScrollView>(reader).controller!;
+    final progress = tester.widget<RawScrollbar>(
+      find.byKey(const ValueKey('chapter-progress')),
+    );
+    expect(progress.controller, same(scroll));
+    expect(progress.trackVisibility, isTrue);
+    expect(progress.thumbVisibility, isTrue);
+    expect(progress.scrollbarOrientation, ScrollbarOrientation.right);
+
+    Future<void> openSpeedSheet() async {
+      await tester.tap(find.byTooltip('Auto-scroll'));
+      await tester.pumpAndSettle();
+      expect(find.text('Scroll speed'), findsOneWidget);
+    }
+
+    Future<void> start() async {
+      await tester.tap(find.text('Start auto-scroll'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.byTooltip('Pause auto-scroll'), findsOneWidget);
+    }
+
+    await openSpeedSheet();
+    await start();
+    expect(awakeCalls.last, isTrue);
+    final slowStart = scroll.offset;
+    await tester.pump(const Duration(seconds: 2));
+    final slowDistance = scroll.offset - slowStart;
+    expect(slowDistance, closeTo(48, 1));
+    await tester.tap(find.byTooltip('Pause auto-scroll'));
+    await tester.pumpAndSettle();
+    final pausedAt = scroll.offset;
+    await tester.pump(const Duration(seconds: 1));
+    expect(scroll.offset, pausedAt);
+    expect(awakeCalls.last, isFalse);
+
+    await openSpeedSheet();
+    final slider = tester.getRect(find.byType(Slider));
+    await tester.tapAt(Offset(slider.right - 20, slider.center.dy));
+    await tester.pump();
+    await start();
+    expect(store.autoScrollSpeed, greaterThan(2));
+    expect(jsonDecode(state)['autoScrollSpeed'], store.autoScrollSpeed);
+    final fastStart = scroll.offset;
+    await tester.pump(const Duration(seconds: 2));
+    expect(scroll.offset - fastStart, greaterThan(2 * slowDistance));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 1));
+    expect(jsonDecode(state)['verse'], isNot('1'));
+    expect(store.recentHistory, isEmpty);
+
+    await tester.drag(reader, const Offset(0, -100));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Pause auto-scroll'), findsNothing);
+    expect(awakeCalls.last, isFalse);
+
+    scroll.jumpTo(scroll.position.maxScrollExtent - 45);
+    await tester.pumpAndSettle();
+    await openSpeedSheet();
+    expect(
+      tester.widget<Slider>(find.byType(Slider)).value,
+      store.autoScrollSpeed,
+    );
+    await start();
+    await tester.pumpAndSettle();
+    expect(scroll.offset, scroll.position.maxScrollExtent);
+    expect(find.byTooltip('Pause auto-scroll'), findsNothing);
+    expect(store.chapter, 8);
+    expect(store.recentHistory, isEmpty);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    final restored = BibleStore();
+    await tester.runAsync(restored.load);
+    expect(restored.autoScrollSpeed, store.autoScrollSpeed);
+  });
+
   testWidgets(
     'Appearance preview stays fixed while controls scroll and updates live',
     (tester) async {

@@ -43,7 +43,7 @@ Widget colorChoice(int index, bool selected, VoidCallback action) => Builder(
                   ),
                   child: selected
                       ? AppIcon(
-                          CupertinoIcons.checkmark,
+                          LucideIcons.check,
                           size: 13,
                           color: color.computeLuminance() > .5
                               ? const Color(0xff202020)
@@ -141,14 +141,14 @@ Future<void> selectionActions(
           SizedBox(height: 15),
           Row(
             children: [
-              actionItem(CupertinoIcons.pencil, 'Highlight', () {
+              actionItem(LucideIcons.pencil, 'Highlight', () {
                 s.colorVerses(ids, s.defaultHighlight);
                 save(context, s);
                 applied = true;
                 Navigator.pop(sheet, false);
               }),
               actionItem(
-                CupertinoIcons.bookmark,
+                LucideIcons.bookmark,
                 allSaved ? 'Unsave' : 'Bookmark',
                 () {
                   if (allSaved) {
@@ -164,7 +164,7 @@ Future<void> selectionActions(
                   }
                 },
               ),
-              actionItem(CupertinoIcons.doc_on_doc, 'Copy', () async {
+              actionItem(LucideIcons.copy, 'Copy', () async {
                 await Clipboard.setData(
                   ClipboardData(text: copyPassage(verses)),
                 );
@@ -172,11 +172,11 @@ Future<void> selectionActions(
                 if (sheet.mounted) Navigator.pop(sheet, false);
               }),
               actionItem(
-                CupertinoIcons.square_pencil,
+                LucideIcons.squarePen,
                 'Note',
                 () => Navigator.pop(sheet, true),
               ),
-              actionItem(CupertinoIcons.pencil_slash, 'Clear color', () {
+              actionItem(LucideIcons.eraser, 'Clear color', () {
                 s.colorVerses(ids, null);
                 save(context, s);
                 applied = true;

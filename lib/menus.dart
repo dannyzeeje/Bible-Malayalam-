@@ -734,10 +734,7 @@ class _PassageSheetState extends State<PassageSheet> {
                           },
                           decoration: const InputDecoration(
                             hintText: 'Book or reference',
-                            prefixIcon: AppIcon(
-                              CupertinoIcons.search,
-                              size: 17,
-                            ),
+                            prefixIcon: AppIcon(LucideIcons.search, size: 17),
                           ),
                         ),
                       ),
@@ -837,7 +834,7 @@ class _PassageSheetState extends State<PassageSheet> {
               s.bookLabel(b.key),
               style: TextStyle(fontSize: 14, color: uiInk(context)),
             ),
-            trailing: AppIcon(CupertinoIcons.chevron_right, size: 12),
+            trailing: AppIcon(LucideIcons.chevronRightDir, size: 12),
             onTap: () => chooseBook(b.key),
           ),
       ],
@@ -878,8 +875,8 @@ class _PassageSheetState extends State<PassageSheet> {
                 ),
                 trailing: AppIcon(
                   e.key == book
-                      ? CupertinoIcons.checkmark
-                      : CupertinoIcons.chevron_right,
+                      ? LucideIcons.check
+                      : LucideIcons.chevronRightDir,
                   size: 13,
                   color: uiMuted(context),
                 ),

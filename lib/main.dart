@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'data.dart';
 
@@ -21,7 +22,7 @@ part 'dashboard.dart';
 part 'tags.dart';
 part 'history.dart';
 
-const appVersion = '2.3.10';
+const appVersion = '2.3.11';
 const developerName = 'dannyzeeje';
 
 const ink = Color(0xff16181d);
@@ -53,6 +54,9 @@ void main() {
     yield LicenseEntryWithLineBreaks([
       'Noto Serif Malayalam',
     ], await rootBundle.loadString('assets/fonts/OFL.txt'));
+    yield LicenseEntryWithLineBreaks([
+      'Lucide icons',
+    ], await rootBundle.loadString('assets/fonts/Lucide-LICENSE.txt'));
     yield LicenseEntryWithLineBreaks([
       'Malayalam Bible · The Free Bible Foundation',
     ], await rootBundle.loadString('assets/ATTRIBUTION.txt'));
@@ -308,10 +312,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 ),
                 Row(
                   children: [
-                    nav(CupertinoIcons.square_grid_2x2, 'Library', 0),
-                    nav(CupertinoIcons.book, 'Read', 1),
-                    nav(CupertinoIcons.search, 'Search', 2),
-                    nav(CupertinoIcons.bookmark, 'Saved', 3),
+                    nav(LucideIcons.layoutGrid, 'Library', 0),
+                    nav(LucideIcons.bookOpen, 'Read', 1),
+                    nav(LucideIcons.search, 'Search', 2),
+                    nav(LucideIcons.bookmark, 'Saved', 3),
                   ],
                 ),
               ],
@@ -413,7 +417,7 @@ void showAbout(BuildContext context) => showModalBottomSheet<void>(
         const SizedBox(height: 20),
         settingsRow(
           sheet,
-          CupertinoIcons.doc_text,
+          LucideIcons.fileText,
           'Edition & licenses',
           onTap: () {
             Navigator.push(
@@ -522,7 +526,7 @@ class _SearchPageState extends State<SearchPage> {
               onChanged: search,
               decoration: InputDecoration(
                 hintText: 'Word or reference',
-                prefixIcon: AppIcon(CupertinoIcons.search),
+                prefixIcon: AppIcon(LucideIcons.search),
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
                   builder: (context, value, _) => value.text.isEmpty
@@ -533,7 +537,7 @@ class _SearchPageState extends State<SearchPage> {
                             controller.clear();
                             search('');
                           },
-                          icon: AppIcon(CupertinoIcons.xmark, size: 18),
+                          icon: AppIcon(LucideIcons.x, size: 18),
                         ),
                 ),
               ),
@@ -544,13 +548,13 @@ class _SearchPageState extends State<SearchPage> {
       Expanded(
         child: query.isEmpty
             ? empty(
-                CupertinoIcons.search,
+                LucideIcons.search,
                 'Search scripture',
                 'Search Malayalam words and phrases,\nor enter an English reference such as John 3:16.',
               )
             : results.isEmpty
             ? empty(
-                CupertinoIcons.search,
+                LucideIcons.search,
                 'No matching verses',
                 'Try a different spelling or a book reference.',
               )
@@ -634,7 +638,7 @@ Widget verseCard(
               ),
               if (s.bookmarks.contains(v.id))
                 AppIcon(
-                  CupertinoIcons.bookmark_fill,
+                  LucideIcons.bookmarkCheck,
                   size: 14,
                   color: uiAccent(context),
                 ),
@@ -771,6 +775,7 @@ class _SavedPageState extends State<SavedPage> {
                   const Spacer(),
                   DropdownButton<String>(
                     value: order,
+                    icon: const AppIcon(LucideIcons.chevronDown, size: 16),
                     underline: const SizedBox(),
                     borderRadius: BorderRadius.circular(24),
                     dropdownColor: toneOf(context).panelA.withValues(alpha: 1),
@@ -797,7 +802,7 @@ class _SavedPageState extends State<SavedPage> {
           Expanded(
             child: verses.isEmpty
                 ? empty(
-                    CupertinoIcons.bookmark,
+                    LucideIcons.bookmark,
                     tag != null && tab == 0
                         ? 'No verses with this tag'
                         : [

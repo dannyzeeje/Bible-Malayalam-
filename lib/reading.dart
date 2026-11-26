@@ -21,6 +21,8 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   double scrollIntent = 0;
   bool? awake;
   Timer? debounce;
+  Future<void>? autoScrollMotion;
+  bool get autoScrolling => autoScrollMotion != null;
   Color get paper => Theme.of(context).colorScheme.surface;
   Color get textColor => toneOf(context).mode == 2
       ? const Color(0xffdededb)
@@ -53,9 +55,10 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   }
 
   void syncAwake() {
-    if (awake != s.keepAwake) {
-      awake = s.keepAwake;
-      unawaited(setAwake(s.keepAwake));
+    final enabled = s.keepAwake || autoScrolling;
+    if (awake != enabled) {
+      awake = enabled;
+      unawaited(setAwake(enabled));
     }
   }
 
@@ -74,29 +77,131 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
-      save(context, s);
+      if (!pauseAutoScroll()) save(context, s);
     }
   }
 
   void track() {
     if (restoring || selected.isNotEmpty) return;
+    if (autoScrolling && (debounce?.isActive ?? false)) return;
     debounce?.cancel();
-    debounce = Timer(Duration(milliseconds: 350), () {
-      if (!mounted) return;
-      final edge = MediaQuery.paddingOf(context).top + (controls ? 68 : 10);
-      for (final e in keys.entries) {
-        final box = e.value.currentContext?.findRenderObject();
-        if (box is RenderBox &&
-            box.hasSize &&
-            box.localToGlobal(Offset.zero).dy >= edge) {
-          if (s.verse != e.key) {
-            s.verse = e.key;
-            save(context, s);
-          }
-          break;
+    debounce = Timer(
+      Duration(milliseconds: autoScrolling ? 1000 : 350),
+      captureReadingPosition,
+    );
+  }
+
+  void captureReadingPosition() {
+    if (!mounted || restoring || selected.isNotEmpty) return;
+    final edge = MediaQuery.paddingOf(context).top + (controls ? 68 : 10);
+    for (final e in keys.entries) {
+      final box = e.value.currentContext?.findRenderObject();
+      if (box is RenderBox &&
+          box.hasSize &&
+          box.localToGlobal(Offset.zero).dy >= edge) {
+        if (s.verse != e.key) {
+          s.verse = e.key;
+          save(context, s);
         }
+        break;
       }
+    }
+  }
+
+  bool pauseAutoScroll({bool interrupt = true}) {
+    if (!autoScrolling) return false;
+    setState(() => autoScrollMotion = null);
+    if (interrupt && scroll.hasClients) scroll.jumpTo(scroll.offset);
+    debounce?.cancel();
+    captureReadingPosition();
+    syncAwake();
+    return true;
+  }
+
+  Future<void> startAutoScroll() async {
+    if (!scroll.hasClients || scroll.position.extentAfter <= 1) return;
+    debounce?.cancel();
+    final target = scroll.position.maxScrollExtent;
+    final seconds = (target - scroll.offset) / (24 * s.autoScrollSpeed);
+    final motion = scroll.animateTo(
+      target,
+      duration: Duration(milliseconds: (seconds * 1000).ceil()),
+      curve: Curves.linear,
+    );
+    setState(() {
+      autoScrollMotion = motion;
+      controls = true;
     });
+    syncAwake();
+    await motion;
+    // Dragging takes over the ScrollPosition and completes its animation.
+    if (mounted && identical(autoScrollMotion, motion)) {
+      pauseAutoScroll(interrupt: false);
+    }
+  }
+
+  Future<void> showAutoScroll() async {
+    if (pauseAutoScroll()) return;
+    var speed = s.autoScrollSpeed;
+    final canStart = scroll.hasClients && scroll.position.extentAfter > 1;
+    final start = await showModalBottomSheet<bool>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheet) => SafeArea(
+        top: false,
+        child: GlassPanel(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: StatefulBuilder(
+              builder: (context, setSheetState) => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  sheetGrip(sheet),
+                  const SizedBox(height: 14),
+                  heading('Auto-scroll', size: 22),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      const Expanded(child: Text('Scroll speed')),
+                      Text('${speed % 1 == 0 ? speed.toInt() : speed}×'),
+                    ],
+                  ),
+                  Slider(
+                    value: speed,
+                    min: BibleStore.minAutoScrollSpeed,
+                    max: BibleStore.maxAutoScrollSpeed,
+                    divisions: 10,
+                    semanticFormatterCallback: (value) => '$value times',
+                    onChanged: (value) => setSheetState(() => speed = value),
+                  ),
+                  if (!canStart)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Text('You’re at the end of this chapter.'),
+                    ),
+                  FilledButton.icon(
+                    onPressed: canStart
+                        ? () => Navigator.pop(sheet, true)
+                        : null,
+                    icon: const AppIcon(LucideIcons.play, size: 15),
+                    label: const Text('Start auto-scroll'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (speed != s.autoScrollSpeed) {
+      s.autoScrollSpeed = speed;
+      unawaited(save(context, s));
+    }
+    if (start == true) unawaited(startAutoScroll());
   }
 
   void prepare() {
@@ -139,6 +244,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   }
 
   void select(Verse v, {bool extend = false}) {
+    pauseAutoScroll();
     debounce?.cancel();
     if (s.haptics) HapticFeedback.selectionClick();
     final previousSelection = Set.of(selected);
@@ -173,6 +279,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
 
   void move(int delta) {
     if (selected.isNotEmpty) return;
+    pauseAutoScroll();
     debounce?.cancel();
     if (s.adjacent(delta)) {
       save(context, s);
@@ -180,32 +287,44 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     }
   }
 
-  void passage() => picker(
-    context,
-    s,
-    onGo: () {
-      if (mounted) {
-        setState(() {
-          chapterKey = '';
-          controls = true;
-        });
-      }
-    },
+  void passage() {
+    pauseAutoScroll();
+    picker(
+      context,
+      s,
+      onGo: () {
+        if (mounted) {
+          setState(() {
+            chapterKey = '';
+            controls = true;
+          });
+        }
+      },
+    );
+  }
+
+  Widget tool(
+    IconData icon,
+    String label,
+    VoidCallback? tap, {
+    bool active = false,
+  }) => SizedBox.square(
+    dimension: 44,
+    child: IconButton(
+      tooltip: label,
+      onPressed: tap,
+      padding: EdgeInsets.zero,
+      icon: AppIcon(
+        icon,
+        size: 20,
+        color: tap == null
+            ? textColor.withValues(alpha: .25)
+            : active
+            ? uiAccent(context)
+            : textColor,
+      ),
+    ),
   );
-  Widget tool(IconData icon, String label, VoidCallback? tap) =>
-      SizedBox.square(
-        dimension: 44,
-        child: IconButton(
-          tooltip: label,
-          onPressed: tap,
-          padding: EdgeInsets.zero,
-          icon: AppIcon(
-            icon,
-            size: 20,
-            color: tap == null ? textColor.withValues(alpha: .25) : textColor,
-          ),
-        ),
-      );
   Widget chapterContent({required bool interactive}) {
     final top = MediaQuery.paddingOf(context).top;
     final bottom = MediaQuery.paddingOf(context).bottom;
@@ -269,7 +388,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                     Padding(
                       padding: const EdgeInsets.only(top: 5),
                       child: AppIcon(
-                        CupertinoIcons.checkmark_circle_fill,
+                        LucideIcons.circleCheck,
                         size: 13,
                         color: textColor,
                       ),
@@ -279,9 +398,9 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                       padding: const EdgeInsets.only(top: 5),
                       child: AppIcon(
                         hasNote
-                            ? CupertinoIcons.doc_text
-                            : CupertinoIcons.bookmark_fill,
-                        size: 9,
+                            ? LucideIcons.fileText
+                            : LucideIcons.bookmarkCheck,
+                        size: 11,
                         color: uiMuted(context),
                       ),
                     ),
@@ -332,31 +451,25 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
           ),
         ),
       );
-  Widget readerIcon(
-    IconData icon,
-    String label,
-    VoidCallback? tap, {
-    bool dark = false,
-  }) => SizedBox.square(
-    dimension: 44,
-    child: FloatingGlass(
-      blur: true,
-      child: IconButton(
-        tooltip: label,
-        onPressed: tap,
-        icon: AppIcon(icon, size: 19),
-      ),
-    ),
-  );
+  Widget readerIcon(IconData icon, String label, VoidCallback? tap) =>
+      SizedBox.square(
+        dimension: 44,
+        child: FloatingGlass(
+          blur: true,
+          readerStyle: true,
+          child: IconButton(
+            tooltip: label,
+            onPressed: tap,
+            icon: AppIcon(icon, size: 19),
+          ),
+        ),
+      );
   Widget topBar() => Row(
     children: [
       readerIcon(
-        selected.isNotEmpty
-            ? CupertinoIcons.xmark
-            : CupertinoIcons.chevron_left,
+        selected.isNotEmpty ? LucideIcons.x : LucideIcons.chevronLeftDir,
         selected.isNotEmpty ? 'Cancel selection' : 'Close reader',
         selected.isNotEmpty ? clearSelection : () => Navigator.pop(context),
-        dark: s.theme == 2,
       ),
       SizedBox(width: 12),
       Expanded(
@@ -364,8 +477,8 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
           height: 44,
           child: FloatingGlass(
             blur: true,
+            readerStyle: true,
             radius: 999,
-            dark: s.theme == 2,
             child: TextButton(
               onPressed: passage,
               style: TextButton.styleFrom(
@@ -388,7 +501,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                     ),
                   ),
                   SizedBox(width: 6),
-                  AppIcon(CupertinoIcons.chevron_down, size: 11),
+                  AppIcon(LucideIcons.chevronDown, size: 11),
                 ],
               ),
             ),
@@ -396,44 +509,43 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
         ),
       ),
       SizedBox(width: 12),
-      readerIcon(
-        CupertinoIcons.search,
-        'Search Bible',
-        openSearch,
-        dark: s.theme == 2,
-      ),
+      readerIcon(LucideIcons.search, 'Search Bible', openSearch),
     ],
   );
-  void openSearch() => Navigator.push(
-    context,
-    CupertinoPageRoute<void>(
-      builder: (page) => Scaffold(
-        body: AppBackdrop(
-          child: SafeArea(
-            child: Column(
-              children: [
-                pageHeader(page, 'Search'),
-                Expanded(child: SearchPage(store: s, showTitle: false)),
-              ],
+  void openSearch() {
+    pauseAutoScroll();
+    Navigator.push(
+      context,
+      CupertinoPageRoute<void>(
+        builder: (page) => Scaffold(
+          body: AppBackdrop(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  pageHeader(page, 'Search'),
+                  Expanded(child: SearchPage(store: s, showTitle: false)),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
   Widget bottomBar() {
     if (selected.isNotEmpty) {
       return Row(
         key: ValueKey('selectionBar'),
         children: [
-          tool(CupertinoIcons.xmark, 'Clear selection', clearSelection),
+          tool(LucideIcons.x, 'Clear selection', clearSelection),
           Expanded(
             child: Text(
               rangeMode ? 'Tap last verse' : '${selected.length} selected',
               style: TextStyle(fontSize: 12, color: textColor),
             ),
           ),
-          tool(CupertinoIcons.arrow_up_arrow_down, 'Select a range', () {
+          tool(LucideIcons.arrowDownUp, 'Select a range', () {
             setState(() => rangeMode = !rangeMode);
           }),
           primaryPill(
@@ -452,15 +564,24 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         tool(
-          CupertinoIcons.chevron_left,
+          LucideIcons.chevronLeftDir,
           'Previous chapter',
           s.book == 'GEN' && s.chapter == 1 ? null : () => move(-1),
         ),
-        tool(CupertinoIcons.list_bullet, 'Go to passage', passage),
+        tool(LucideIcons.list, 'Go to passage', passage),
+        tool(
+          autoScrolling ? LucideIcons.circlePause : LucideIcons.circlePlay,
+          autoScrolling ? 'Pause auto-scroll' : 'Auto-scroll',
+          showAutoScroll,
+          active: autoScrolling,
+        ),
         SizedBox.square(
           dimension: 44,
           child: TextButton(
-            onPressed: () => appearance(context, s),
+            onPressed: () {
+              pauseAutoScroll();
+              appearance(context, s);
+            },
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
               foregroundColor: textColor,
@@ -472,7 +593,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
           ),
         ),
         tool(
-          CupertinoIcons.chevron_right,
+          LucideIcons.chevronRightDir,
           'Next chapter',
           s.book == 'REV' && s.chapter == 22 ? null : () => move(1),
         ),
@@ -499,7 +620,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     child: GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () {
-        if (selected.isEmpty) controls = !controls;
+        if (!pauseAutoScroll() && selected.isEmpty) controls = !controls;
       },
       onHorizontalDragEnd: (d) {
         if ((d.primaryVelocity ?? 0).abs() > 250) {
@@ -507,12 +628,30 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
         }
       },
       child: ScrollConfiguration(
-        behavior: const ReaderScrollBehavior(),
-        child: SingleChildScrollView(
-          key: ValueKey('readerScroll'),
+        behavior: const ReaderScrollBehavior().copyWith(scrollbars: false),
+        child: RawScrollbar(
+          key: const ValueKey('chapter-progress'),
           controller: scroll,
-          physics: const ReaderScrollPhysics(),
-          child: chapterContent(interactive: true),
+          thumbVisibility: true,
+          trackVisibility: true,
+          interactive: false,
+          scrollbarOrientation: ScrollbarOrientation.right,
+          thickness: 3,
+          radius: const Radius.circular(2),
+          trackRadius: const Radius.circular(2),
+          trackColor: uiMuted(context).withValues(alpha: .12),
+          trackBorderColor: Colors.transparent,
+          thumbColor: uiAccent(context).withValues(alpha: .65),
+          padding:
+              MediaQuery.paddingOf(context) +
+              const EdgeInsets.fromLTRB(0, 64, 4, 64),
+          minThumbLength: 24,
+          child: SingleChildScrollView(
+            key: const ValueKey('readerScroll'),
+            controller: scroll,
+            physics: const ReaderScrollPhysics(),
+            child: chapterContent(interactive: true),
+          ),
         ),
       ),
     ),
@@ -527,7 +666,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
       return PopScope(
         canPop: selected.isEmpty,
         onPopInvokedWithResult: (didPop, result) {
-          if (!didPop && selected.isNotEmpty) clearSelection();
+          if (didPop) {
+            pauseAutoScroll();
+          } else if (selected.isNotEmpty) {
+            clearSelection();
+          }
         },
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: s.theme == 2
@@ -542,7 +685,8 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                 child: readingScroll(),
               ),
               builder: (context, showChrome, page) {
-                final visible = showChrome || selected.isNotEmpty;
+                final visible =
+                    showChrome || selected.isNotEmpty || autoScrolling;
                 return Stack(
                   children: [
                     Positioned.fill(child: page!),
@@ -554,7 +698,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                           duration: motionDuration(context, 200),
                           child: ReaderEdgeFade(
                             paper: paper,
-                            topExtent: top + 120,
+                            topExtent: top + 76,
                             bottomExtent: bottom + 120,
                           ),
                         ),
@@ -592,9 +736,9 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                           padding: EdgeInsets.only(bottom: bottom + 12),
                           child: FloatingGlass(
                             blur: true,
+                            readerStyle: true,
                             key: const ValueKey('reader-bottom-glass'),
                             radius: 28,
-                            dark: s.theme == 2,
                             padding: EdgeInsets.all(6),
                             child: bottomBar(),
                           ),
@@ -629,7 +773,7 @@ class ReaderEdgeFade extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            paper.withValues(alpha: .92),
+            paper.withValues(alpha: .68),
             paper.withValues(alpha: 0),
             paper.withValues(alpha: 0),
             // Let the dock sample scripture rather than an opaque edge wash.

@@ -160,7 +160,7 @@ class _HistoryVerseCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(11),
               ),
               child: AppIcon(
-                CupertinoIcons.book,
+                LucideIcons.bookOpen,
                 size: 17,
                 color: uiAccent(context),
               ),
@@ -186,11 +186,10 @@ class _HistoryVerseCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
+            AppIcon(
+              LucideIcons.chevronRightDir,
               size: 18,
               color: uiMuted(context),
-              textDirection: Directionality.of(context),
             ),
           ],
         ),
@@ -217,7 +216,7 @@ class _EmptyHistory extends StatelessWidget {
                   radius: 28,
                   backgroundColor: uiAccent(context).withValues(alpha: .10),
                   child: AppIcon(
-                    CupertinoIcons.clock,
+                    LucideIcons.clock,
                     size: 25,
                     color: uiAccent(context),
                   ),

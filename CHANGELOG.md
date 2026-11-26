@@ -1,3 +1,10 @@
+## 2.3.11
+
+- Reader controls use lighter frosted glass that blurs the scripture behind them.
+- Added hands-free auto-scroll with a remembered speed. Pause from the reader toolbar or take over by dragging. Auto-scroll stops at the end of the chapter.
+- A slim indicator along the reader’s right edge shows how far you are through the chapter.
+- Updated interface icons throughout the app with a consistent outline style.
+
 ## 2.3.10
 
 - History records selected verses. Reading, scrolling and opening chapters still save your reading position.
