@@ -222,7 +222,7 @@ class SheetShell extends StatelessWidget {
     this.scrollable = false,
   });
   @override
-  Widget build(BuildContext context) => GlassPanel(
+  Widget build(BuildContext context) => FloatingGlass.panel(
     radius: 30,
     child: SafeArea(
       top: false,

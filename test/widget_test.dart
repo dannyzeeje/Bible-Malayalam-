@@ -1214,7 +1214,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Go to passage'));
     await tester.pumpAndSettle();
-    final sheet = find.byType(GlassPanel).last;
+    final sheet = find.descendant(
+      of: find.byType(PassageSheet),
+      matching: find.byType(FloatingGlass),
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.byType(BackdropFilter)),
+      findsOneWidget,
+    );
     final before = tester.getSize(sheet).height;
     expect(find.byTooltip('Close'), findsNothing);
     await tester.drag(find.text('Passage'), const Offset(0, -250));
@@ -1523,6 +1530,19 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile('screens/tag-filter.png'),
     );
+    await tester.tap(find.widgetWithText(TextButton, 'Bible order'));
+    await tester.pumpAndSettle();
+    final sortMenu = find.ancestor(
+      of: find.byType(MenuItemButton).first,
+      matching: find.byType(FloatingGlass),
+    );
+    expect(
+      find.descendant(of: sortMenu, matching: find.byType(BackdropFilter)),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(MenuItemButton, 'Recently saved'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextButton, 'Recently saved'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
   });
@@ -1556,8 +1576,6 @@ void main() {
     final dock = tester.widget<FloatingGlass>(
       find.byKey(const ValueKey('reader-bottom-glass')),
     );
-    expect(dock.blur, isTrue);
-    expect(dock.readerStyle, isTrue);
     expect(dock.radius, 28);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
@@ -1591,6 +1609,13 @@ void main() {
     expect(progress.thumbVisibility, isTrue);
     expect(progress.scrollbarOrientation, ScrollbarOrientation.right);
 
+    void expectBars(double opacity) {
+      for (final key in ['readerTopControls', 'readerBottomControls']) {
+        final bar = tester.widget<AnimatedOpacity>(find.byKey(ValueKey(key)));
+        expect(bar.opacity, opacity);
+      }
+    }
+
     Future<void> openSpeedSheet() async {
       await tester.tap(find.byTooltip('Auto-scroll'));
       await tester.pumpAndSettle();
@@ -1601,7 +1626,8 @@ void main() {
       await tester.tap(find.text('Start auto-scroll'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 350));
-      expect(find.byTooltip('Pause auto-scroll'), findsOneWidget);
+      expectBars(0);
+      expect(find.byTooltip('Auto-scroll').hitTestable(), findsNothing);
     }
 
     await openSpeedSheet();
@@ -1611,13 +1637,16 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     final slowDistance = scroll.offset - slowStart;
     expect(slowDistance, closeTo(48, 1));
-    await tester.tap(find.byTooltip('Pause auto-scroll'));
+    await tester.tapAt(const Offset(180, 250));
     await tester.pumpAndSettle();
+    expectBars(1);
+    expect(store.recentHistory, isEmpty);
     final pausedAt = scroll.offset;
     await tester.pump(const Duration(seconds: 1));
     expect(scroll.offset, pausedAt);
     expect(awakeCalls.last, isFalse);
 
+    store.autoHide = true;
     await openSpeedSheet();
     final slider = tester.getRect(find.byType(Slider));
     await tester.tapAt(Offset(slider.right - 20, slider.center.dy));
@@ -1635,7 +1664,7 @@ void main() {
 
     await tester.drag(reader, const Offset(0, -100));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Pause auto-scroll'), findsNothing);
+    expectBars(1);
     expect(awakeCalls.last, isFalse);
 
     scroll.jumpTo(scroll.position.maxScrollExtent - 45);
@@ -1648,7 +1677,7 @@ void main() {
     await start();
     await tester.pumpAndSettle();
     expect(scroll.offset, scroll.position.maxScrollExtent);
-    expect(find.byTooltip('Pause auto-scroll'), findsNothing);
+    expectBars(1);
     expect(store.chapter, 8);
     expect(store.recentHistory, isEmpty);
 

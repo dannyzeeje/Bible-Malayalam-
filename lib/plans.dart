@@ -238,11 +238,8 @@ class _CustomPlanPageState extends State<CustomPlanPage> {
                           onTap: () async {
                             FocusScope.of(context).unfocus();
                             final selected =
-                                await showModalBottomSheet<Set<String>>(
+                                await showFrostedSheet<Set<String>>(
                                   context: context,
-                                  useSafeArea: true,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
                                   builder: (_) =>
                                       PlanBooksSheet(initial: books),
                                 );
@@ -287,7 +284,7 @@ class _PlanBooksSheetState extends State<PlanBooksSheet> {
   late final Set<String> selected = {...widget.initial};
   String query = '';
   @override
-  Widget build(BuildContext context) => GlassPanel(
+  Widget build(BuildContext context) => FloatingGlass.panel(
     radius: 30,
     child: SafeArea(
       top: false,
@@ -388,17 +385,20 @@ Future<void> deleteCustomPlan(
   BibleStore store,
   ReadingPlan plan,
 ) async {
-  final yes = await showCupertinoDialog<bool>(
+  final yes = await showFrostedDialog<bool>(
     context: context,
-    builder: (dialog) => CupertinoAlertDialog(
+    barrierDismissible: false,
+    builder: (dialog) => FrostedDialog(
       title: Text('Delete ${plan.title}?'),
       actions: [
-        CupertinoDialogAction(
+        TextButton(
           onPressed: () => Navigator.pop(dialog, false),
           child: Text('Cancel'),
         ),
-        CupertinoDialogAction(
-          isDestructiveAction: true,
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(dialog).colorScheme.error,
+          ),
           onPressed: () => Navigator.pop(dialog, true),
           child: Text('Delete'),
         ),

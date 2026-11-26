@@ -14,17 +14,11 @@ class GlassPanel extends StatelessWidget {
   final Widget child;
   final double radius;
   final EdgeInsets padding;
-  final bool? dark;
-  final bool translucent;
-  final double? glassOpacity;
   const GlassPanel({
     super.key,
     required this.child,
     this.radius = 28,
     this.padding = EdgeInsets.zero,
-    this.dark,
-    this.translucent = false,
-    this.glassOpacity,
   });
   @override
   Widget build(BuildContext context) {
@@ -36,9 +30,7 @@ class GlassPanel extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: tone.mode == 2 ? 0.08 : 0.018,
-                  ),
+                  color: Colors.black.withValues(alpha: .018),
                   blurRadius: 18,
                   offset: Offset(0, 5),
                 ),
@@ -51,34 +43,89 @@ class GlassPanel extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: tone.border, width: .7),
-            color: translucent
-                ? null
-                : Color.alphaBlend(tone.panelA, tone.background),
-            gradient: !translucent
-                ? null
-                : LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: translucent
-                        ? [
-                            tone.panelA.withValues(
-                              alpha: glassOpacity ?? tone.panelA.a,
-                            ),
-                            tone.panelB.withValues(
-                              alpha: glassOpacity ?? tone.panelB.a,
-                            ),
-                          ]
-                        : [
-                            Color.alphaBlend(tone.panelA, tone.background),
-                            Color.alphaBlend(tone.panelB, tone.background),
-                          ],
-                  ),
+            color: Color.alphaBlend(tone.panelA, tone.background),
           ),
           child: Material(type: MaterialType.transparency, child: child),
         ),
       ),
     );
   }
+}
+
+Color _popupBarrier(BuildContext context) =>
+    Colors.black.withValues(alpha: toneOf(context).mode == 2 ? .42 : .25);
+
+Future<T?> showFrostedSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) => showModalBottomSheet<T>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  backgroundColor: Colors.transparent,
+  barrierColor: _popupBarrier(context),
+  sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+      ? AnimationStyle.noAnimation
+      : null,
+  builder: builder,
+);
+
+Future<T?> showFrostedDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) => showDialog<T>(
+  context: context,
+  barrierColor: _popupBarrier(context),
+  barrierDismissible: barrierDismissible,
+  builder: builder,
+);
+
+class FrostedDialog extends StatelessWidget {
+  final Widget title;
+  final Widget? content;
+  final List<Widget> actions;
+
+  const FrostedDialog({
+    super.key,
+    required this.title,
+    this.content,
+    required this.actions,
+  });
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
+    child: FloatingGlass.panel(
+      radius: 26,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DefaultTextStyle(
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.w600),
+              child: title,
+            ),
+            if (content != null) ...[
+              const SizedBox(height: 14),
+              DefaultTextStyle(
+                style: Theme.of(context).textTheme.bodyMedium!,
+                child: content!,
+              ),
+            ],
+            const SizedBox(height: 14),
+            OverflowBar(alignment: MainAxisAlignment.end, children: actions),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 Widget glassIcon(
@@ -280,16 +327,13 @@ Future<void> showPlanDay(
   BibleStore s,
   ReadingPlan plan,
   int day,
-) => showModalBottomSheet<void>(
+) => showFrostedSheet<void>(
   context: context,
-  isScrollControlled: true,
-  useSafeArea: true,
-  backgroundColor: Colors.transparent,
   builder: (sheet) {
     final keys = s.planChapters(plan, day);
     final maximum = MediaQuery.sizeOf(sheet).height * .78;
     final height = (keys.length * 56.0 + 144).clamp(220.0, maximum);
-    return GlassPanel(
+    return FloatingGlass.panel(
       radius: 30,
       child: SafeArea(
         top: false,
@@ -593,9 +637,9 @@ Future<void> backupData(
         'importBackup',
       );
       if (source == null || !context.mounted) return;
-      final approved = await showDialog<bool>(
+      final approved = await showFrostedDialog<bool>(
         context: context,
-        builder: (dialog) => AlertDialog(
+        builder: (dialog) => FrostedDialog(
           title: const Text('Restore saved data?'),
           content: const Text(
             'Merge bookmarks, highlights, notes and tags from this backup. Matching entries will use the backup version. Other saved entries stay on this device.',
@@ -644,10 +688,8 @@ Future<void> backupData(
 Future<void> manageTags(
   BuildContext context,
   BibleStore s,
-) => showModalBottomSheet<void>(
+) => showFrostedSheet<void>(
   context: context,
-  isScrollControlled: true,
-  useSafeArea: true,
   builder: (sheet) => ListenableBuilder(
     listenable: s,
     builder: (context, _) => SizedBox(
@@ -672,9 +714,9 @@ Future<void> manageTags(
                               icon: const AppIcon(LucideIcons.pencil),
                               onPressed: () async {
                                 var edited = tag;
-                                final name = await showDialog<String>(
+                                final name = await showFrostedDialog<String>(
                                   context: context,
-                                  builder: (dialog) => AlertDialog(
+                                  builder: (dialog) => FrostedDialog(
                                     title: const Text('Rename tag'),
                                     content: TextFormField(
                                       initialValue: tag,
@@ -707,9 +749,9 @@ Future<void> manageTags(
                               tooltip: 'Delete $tag',
                               icon: const AppIcon(LucideIcons.trash2),
                               onPressed: () async {
-                                final yes = await showDialog<bool>(
+                                final yes = await showFrostedDialog<bool>(
                                   context: context,
-                                  builder: (dialog) => AlertDialog(
+                                  builder: (dialog) => FrostedDialog(
                                     title: const Text('Delete tag?'),
                                     content: Text(
                                       'Remove “$tag” from all bookmarks? Your bookmarks will stay saved.',

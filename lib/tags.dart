@@ -5,11 +5,8 @@ Future<bool> editBookmarkTags(
   BibleStore s,
   List<String> ids,
 ) async {
-  final tags = await showModalBottomSheet<List<String>>(
+  final tags = await showFrostedSheet<List<String>>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => BookmarkTagsSheet(store: s, ids: ids),
   );
   if (tags == null) return false;

@@ -1,3 +1,8 @@
+## 2.3.12
+
+- Frosted surfaces extend to sheets, dialogs, and floating navigation controls across the app.
+- Auto-scroll hides the reader bars for a clear reading view. Tap or drag the page to stop and bring both bars back. The bars also return at the end of the chapter.
+
 ## 2.3.11
 
 - Reader controls use lighter frosted glass that blurs the scripture behind them.
