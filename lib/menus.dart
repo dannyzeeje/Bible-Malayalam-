@@ -5,7 +5,7 @@ Future<void> appearance(BuildContext context, BibleStore s) =>
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Close appearance',
-      barrierColor: Colors.black.withValues(alpha: .18),
+      barrierColor: Colors.black.withValues(alpha: .12),
       transitionDuration: motionDuration(context, 300),
       pageBuilder: (popup, animation, secondaryAnimation) => AnimatedBuilder(
         animation: animation,
@@ -17,8 +17,8 @@ Future<void> appearance(BuildContext context, BibleStore s) =>
                 child: BackdropFilter(
                   key: const ValueKey('appearance-backdrop'),
                   filter: ImageFilter.blur(
-                    sigmaX: 14 * animation.value,
-                    sigmaY: 14 * animation.value,
+                    sigmaX: 5 * animation.value,
+                    sigmaY: 5 * animation.value,
                   ),
                   child: const ColoredBox(color: Colors.transparent),
                 ),
@@ -77,10 +77,6 @@ class ReadingAppearance extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final s = store;
-          final panel = Color.alphaBlend(
-            toneOf(context).panelA,
-            toneOf(context).background,
-          );
           Widget divider() => Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Divider(color: uiInk(context).withValues(alpha: .07)),
@@ -92,89 +88,79 @@ class ReadingAppearance extends StatelessWidget {
                   key: const ValueKey('typeface-preview'),
                   height: (box.maxHeight * .34).clamp(155.0, 290.0),
                   margin: const EdgeInsets.fromLTRB(18, 0, 18, 20),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: panel,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: .04),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      eyebrow('PREVIEW'),
-                      const SizedBox(height: 10),
-                      Text(
-                        'സങ്കീർത്തനങ്ങൾ 23',
-                        style: TextStyle(
-                          fontFamily: s.fontFamily,
-                          fontSize: 20,
-                          color: uiInk(context),
+                  child: FloatingGlass.panel(
+                    radius: 28,
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        eyebrow('PREVIEW'),
+                        const SizedBox(height: 10),
+                        Text(
+                          'സങ്കീർത്തനങ്ങൾ 23',
+                          style: TextStyle(
+                            fontFamily: s.fontFamily,
+                            fontSize: 20,
+                            color: uiInk(context),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: ClipRect(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                for (final n in ['1', '2'])
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (s.numbers) ...[
-                                          Text(
-                                            n,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              height: 2.2,
-                                              color: uiMuted(context),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: ClipRect(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  for (final n in ['1', '2'])
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (s.numbers) ...[
+                                            Text(
+                                              n,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                height: 2.2,
+                                                color: uiMuted(context),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 14),
+                                          ],
+                                          Expanded(
+                                            child: Text(
+                                              s.byId['PSA.23.$n']?.text ?? '',
+                                              key: n == '1'
+                                                  ? const ValueKey(
+                                                      'live-preview-text',
+                                                    )
+                                                  : null,
+                                              style: TextStyle(
+                                                fontFamily: s.fontFamily,
+                                                fontSize: s.fontSize,
+                                                height: s.lineHeight,
+                                                color: uiInk(context),
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(width: 14),
                                         ],
-                                        Expanded(
-                                          child: Text(
-                                            s.byId['PSA.23.$n']?.text ?? '',
-                                            key: n == '1'
-                                                ? const ValueKey(
-                                                    'live-preview-text',
-                                                  )
-                                                : null,
-                                            style: TextStyle(
-                                              fontFamily: s.fontFamily,
-                                              fontSize: s.fontSize,
-                                              height: s.lineHeight,
-                                              color: uiInk(context),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
-                  child: Material(
-                    color: panel,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
-                    clipBehavior: Clip.antiAlias,
+                  child: FloatingGlass.panel(
+                    radius: 28,
                     child: SafeArea(
                       top: false,
                       child: Column(
@@ -577,11 +563,8 @@ Future<void> picker(
   BibleStore s, {
   VoidCallback? onGo,
 }) async {
-  final target = await showModalBottomSheet<(Verse, {bool selected})>(
+  final target = await showFrostedSheet<(Verse, {bool selected})>(
     context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => PassageSheet(store: s),
   );
   if (target != null) {
@@ -652,7 +635,7 @@ class _PassageSheetState extends State<PassageSheet> {
             maxChildSize: .96,
             snap: true,
             snapSizes: const [],
-            builder: (context, sheetScroll) => GlassPanel(
+            builder: (context, sheetScroll) => FloatingGlass.panel(
               radius: 30,
               child: SafeArea(
                 top: false,

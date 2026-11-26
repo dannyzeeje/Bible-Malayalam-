@@ -22,6 +22,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   bool? awake;
   Timer? debounce;
   Future<void>? autoScrollMotion;
+  int? autoScrollPointer;
   bool get autoScrolling => autoScrollMotion != null;
   Color get paper => Theme.of(context).colorScheme.surface;
   Color get textColor => toneOf(context).mode == 2
@@ -110,7 +111,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
 
   bool pauseAutoScroll({bool interrupt = true}) {
     if (!autoScrolling) return false;
-    setState(() => autoScrollMotion = null);
+    setState(() {
+      autoScrollMotion = null;
+      scrollIntent = 0;
+      controls = true;
+    });
     if (interrupt && scroll.hasClients) scroll.jumpTo(scroll.offset);
     debounce?.cancel();
     captureReadingPosition();
@@ -130,7 +135,8 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     );
     setState(() {
       autoScrollMotion = motion;
-      controls = true;
+      scrollIntent = 0;
+      controls = false;
     });
     syncAwake();
     await motion;
@@ -144,14 +150,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     if (pauseAutoScroll()) return;
     var speed = s.autoScrollSpeed;
     final canStart = scroll.hasClients && scroll.position.extentAfter > 1;
-    final start = await showModalBottomSheet<bool>(
+    final start = await showFrostedSheet<bool>(
       context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (sheet) => SafeArea(
         top: false,
-        child: GlassPanel(
+        child: FloatingGlass.panel(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
             child: StatefulBuilder(
@@ -162,6 +165,11 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                   sheetGrip(sheet),
                   const SizedBox(height: 14),
                   heading('Auto-scroll', size: 22),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Tap or drag the page to stop.',
+                    style: TextStyle(color: uiMuted(context)),
+                  ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -244,7 +252,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
   }
 
   void select(Verse v, {bool extend = false}) {
-    pauseAutoScroll();
+    if (pauseAutoScroll() || autoScrollPointer != null) return;
     debounce?.cancel();
     if (s.haptics) HapticFeedback.selectionClick();
     final previousSelection = Set.of(selected);
@@ -303,28 +311,20 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     );
   }
 
-  Widget tool(
-    IconData icon,
-    String label,
-    VoidCallback? tap, {
-    bool active = false,
-  }) => SizedBox.square(
-    dimension: 44,
-    child: IconButton(
-      tooltip: label,
-      onPressed: tap,
-      padding: EdgeInsets.zero,
-      icon: AppIcon(
-        icon,
-        size: 20,
-        color: tap == null
-            ? textColor.withValues(alpha: .25)
-            : active
-            ? uiAccent(context)
-            : textColor,
-      ),
-    ),
-  );
+  Widget tool(IconData icon, String label, VoidCallback? tap) =>
+      SizedBox.square(
+        dimension: 44,
+        child: IconButton(
+          tooltip: label,
+          onPressed: tap,
+          padding: EdgeInsets.zero,
+          icon: AppIcon(
+            icon,
+            size: 20,
+            color: tap == null ? textColor.withValues(alpha: .25) : textColor,
+          ),
+        ),
+      );
   Widget chapterContent({required bool interactive}) {
     final top = MediaQuery.paddingOf(context).top;
     final bottom = MediaQuery.paddingOf(context).bottom;
@@ -455,8 +455,6 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
       SizedBox.square(
         dimension: 44,
         child: FloatingGlass(
-          blur: true,
-          readerStyle: true,
           child: IconButton(
             tooltip: label,
             onPressed: tap,
@@ -476,8 +474,6 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
         child: SizedBox(
           height: 44,
           child: FloatingGlass(
-            blur: true,
-            readerStyle: true,
             radius: 999,
             child: TextButton(
               onPressed: passage,
@@ -569,12 +565,7 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
           s.book == 'GEN' && s.chapter == 1 ? null : () => move(-1),
         ),
         tool(LucideIcons.list, 'Go to passage', passage),
-        tool(
-          autoScrolling ? LucideIcons.circlePause : LucideIcons.circlePlay,
-          autoScrolling ? 'Pause auto-scroll' : 'Auto-scroll',
-          showAutoScroll,
-          active: autoScrolling,
-        ),
+        tool(LucideIcons.circlePlay, 'Auto-scroll', showAutoScroll),
         SizedBox.square(
           dimension: 44,
           child: TextButton(
@@ -601,56 +592,74 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
     );
   }
 
-  Widget readingScroll() => NotificationListener<ScrollNotification>(
-    onNotification: (n) {
-      if (s.autoHide &&
-          selected.isEmpty &&
-          n is ScrollUpdateNotification &&
-          n.dragDetails != null) {
-        final delta = n.scrollDelta ?? 0;
-        if (delta.sign != scrollIntent.sign) scrollIntent = 0;
-        scrollIntent += delta;
-        if (scrollIntent.abs() >= 48) {
-          controls = scrollIntent < 0;
-          scrollIntent = 0;
-        }
-      }
-      return false;
+  void finishAutoScrollGesture(PointerEvent event) {
+    if (autoScrollPointer != event.pointer) return;
+    // Let the tap recognizers finish before allowing this gesture to select a verse.
+    scheduleMicrotask(() {
+      if (autoScrollPointer == event.pointer) autoScrollPointer = null;
+    });
+  }
+
+  Widget readingScroll() => Listener(
+    onPointerDown: (event) {
+      if (autoScrolling) autoScrollPointer = event.pointer;
     },
-    child: GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () {
-        if (!pauseAutoScroll() && selected.isEmpty) controls = !controls;
-      },
-      onHorizontalDragEnd: (d) {
-        if ((d.primaryVelocity ?? 0).abs() > 250) {
-          move(d.primaryVelocity! < 0 ? 1 : -1);
+    onPointerUp: finishAutoScrollGesture,
+    onPointerCancel: finishAutoScrollGesture,
+    child: NotificationListener<ScrollNotification>(
+      onNotification: (n) {
+        if (!autoScrolling &&
+            autoScrollPointer == null &&
+            s.autoHide &&
+            selected.isEmpty &&
+            n is ScrollUpdateNotification &&
+            n.dragDetails != null) {
+          final delta = n.scrollDelta ?? 0;
+          if (delta.sign != scrollIntent.sign) scrollIntent = 0;
+          scrollIntent += delta;
+          if (scrollIntent.abs() >= 48) {
+            controls = scrollIntent < 0;
+            scrollIntent = 0;
+          }
         }
+        return false;
       },
-      child: ScrollConfiguration(
-        behavior: const ReaderScrollBehavior().copyWith(scrollbars: false),
-        child: RawScrollbar(
-          key: const ValueKey('chapter-progress'),
-          controller: scroll,
-          thumbVisibility: true,
-          trackVisibility: true,
-          interactive: false,
-          scrollbarOrientation: ScrollbarOrientation.right,
-          thickness: 3,
-          radius: const Radius.circular(2),
-          trackRadius: const Radius.circular(2),
-          trackColor: uiMuted(context).withValues(alpha: .12),
-          trackBorderColor: Colors.transparent,
-          thumbColor: uiAccent(context).withValues(alpha: .65),
-          padding:
-              MediaQuery.paddingOf(context) +
-              const EdgeInsets.fromLTRB(0, 64, 4, 64),
-          minThumbLength: 24,
-          child: SingleChildScrollView(
-            key: const ValueKey('readerScroll'),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          if (pauseAutoScroll() || autoScrollPointer != null) return;
+          if (selected.isEmpty) controls = !controls;
+        },
+        onHorizontalDragEnd: (d) {
+          if ((d.primaryVelocity ?? 0).abs() > 250) {
+            move(d.primaryVelocity! < 0 ? 1 : -1);
+          }
+        },
+        child: ScrollConfiguration(
+          behavior: const ReaderScrollBehavior().copyWith(scrollbars: false),
+          child: RawScrollbar(
+            key: const ValueKey('chapter-progress'),
             controller: scroll,
-            physics: const ReaderScrollPhysics(),
-            child: chapterContent(interactive: true),
+            thumbVisibility: true,
+            trackVisibility: true,
+            interactive: false,
+            scrollbarOrientation: ScrollbarOrientation.right,
+            thickness: 3,
+            radius: const Radius.circular(2),
+            trackRadius: const Radius.circular(2),
+            trackColor: uiMuted(context).withValues(alpha: .12),
+            trackBorderColor: Colors.transparent,
+            thumbColor: uiAccent(context).withValues(alpha: .65),
+            padding:
+                MediaQuery.paddingOf(context) +
+                const EdgeInsets.fromLTRB(0, 64, 4, 64),
+            minThumbLength: 24,
+            child: SingleChildScrollView(
+              key: const ValueKey('readerScroll'),
+              controller: scroll,
+              physics: const ReaderScrollPhysics(),
+              child: chapterContent(interactive: true),
+            ),
           ),
         ),
       ),
@@ -686,10 +695,21 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
               ),
               builder: (context, showChrome, page) {
                 final visible =
-                    showChrome || selected.isNotEmpty || autoScrolling;
+                    !autoScrolling && (showChrome || selected.isNotEmpty);
                 return Stack(
                   children: [
-                    Positioned.fill(child: page!),
+                    Positioned.fill(
+                      child: Semantics(
+                        customSemanticsActions: autoScrolling
+                            ? {
+                                const CustomSemanticsAction(
+                                  label: 'Stop auto-scroll',
+                                ): pauseAutoScroll,
+                              }
+                            : null,
+                        child: page!,
+                      ),
+                    ),
                     Positioned.fill(
                       child: IgnorePointer(
                         child: AnimatedOpacity(
@@ -735,8 +755,6 @@ class _ReaderState extends State<Reader> with WidgetsBindingObserver {
                         Padding(
                           padding: EdgeInsets.only(bottom: bottom + 12),
                           child: FloatingGlass(
-                            blur: true,
-                            readerStyle: true,
                             key: const ValueKey('reader-bottom-glass'),
                             radius: 28,
                             padding: EdgeInsets.all(6),

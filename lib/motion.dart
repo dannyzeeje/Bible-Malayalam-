@@ -130,68 +130,63 @@ class _StatusBarVeilState extends State<StatusBarVeil> {
 
 /// Floating surfaces alone sample the content behind them.
 class FloatingGlass extends StatelessWidget {
-  static final _blurFilter = ImageFilter.blur(sigmaX: 18, sigmaY: 18);
-  static final _readerBlur = ImageFilter.blur(sigmaX: 10, sigmaY: 10);
+  static final _controlBlur = ImageFilter.blur(sigmaX: 10, sigmaY: 10);
+  static final _panelBlur = ImageFilter.blur(sigmaX: 16, sigmaY: 16);
   final Widget child;
-  final bool? dark;
-  final bool blur;
-  final bool readerStyle;
   final double radius;
   final EdgeInsets padding;
+  final bool _panel;
   const FloatingGlass({
     super.key,
     required this.child,
     this.radius = 999,
-    this.dark,
-    this.blur = false,
-    this.readerStyle = false,
     this.padding = EdgeInsets.zero,
-  });
+  }) : _panel = false;
+  const FloatingGlass.panel({
+    super.key,
+    required this.child,
+    this.radius = 30,
+    this.padding = EdgeInsets.zero,
+  }) : _panel = true;
+
   @override
   Widget build(BuildContext context) {
     final corners = BorderRadius.circular(radius);
     final tone = toneOf(context);
     final dark = tone.mode == 2;
+    final topOpacity = _panel ? .82 : (dark ? .58 : .51);
+    final bottomOpacity = _panel ? .67 : (dark ? .40 : .32);
     return ClipRRect(
       borderRadius: corners,
       child: BackdropFilter(
-        enabled: blur,
-        filter: readerStyle ? _readerBlur : _blurFilter,
-        child: readerStyle
-            ? DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: corners,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      tone.panelA.withValues(alpha: dark ? .58 : .51),
-                      tone.panelB.withValues(alpha: dark ? .40 : .32),
-                    ],
-                  ),
-                ),
-                child: DecoratedBox(
-                  position: DecorationPosition.foreground,
-                  decoration: BoxDecoration(
-                    borderRadius: corners,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: dark ? .18 : .91),
-                      width: .8,
-                    ),
-                  ),
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Padding(padding: padding, child: child),
-                  ),
-                ),
-              )
-            : GlassPanel(
-                radius: radius,
-                padding: padding,
-                translucent: true,
-                glassOpacity: blur ? .68 : null,
-                child: child,
+        filter: _panel ? _panelBlur : _controlBlur,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: corners,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                tone.panelA.withValues(alpha: topOpacity),
+                tone.panelB.withValues(alpha: bottomOpacity),
+              ],
+            ),
+          ),
+          child: DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(
+              borderRadius: corners,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: dark ? .18 : .91),
+                width: .8,
               ),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Padding(padding: padding, child: child),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'dart:ui' show ImageFilter, FragmentProgram, FragmentShader;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -22,7 +23,7 @@ part 'dashboard.dart';
 part 'tags.dart';
 part 'history.dart';
 
-const appVersion = '2.3.11';
+const appVersion = '2.3.12';
 const developerName = 'dannyzeeje';
 
 const ink = Color(0xff16181d);
@@ -279,7 +280,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       minimum: EdgeInsets.fromLTRB(16, 6, 16, 12),
       child: FloatingGlass(
         key: const ValueKey('home-dock'),
-        blur: true,
         radius: 28,
         padding: EdgeInsets.all(5),
         child: LayoutBuilder(
@@ -380,11 +380,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   Widget library() => ReadingHub(store: s, onSaved: () => switchTab(3));
 }
 
-void showAbout(BuildContext context) => showModalBottomSheet<void>(
+void showAbout(BuildContext context) => showFrostedSheet<void>(
   context: context,
-  useSafeArea: true,
-  isScrollControlled: true,
-  backgroundColor: Colors.transparent,
   builder: (sheet) => SheetShell(
     title: 'About Bible',
     child: Column(
@@ -773,27 +770,59 @@ class _SavedPageState extends State<SavedPage> {
               child: Row(
                 children: [
                   const Spacer(),
-                  DropdownButton<String>(
-                    value: order,
-                    icon: const AppIcon(LucideIcons.chevronDown, size: 16),
-                    underline: const SizedBox(),
-                    borderRadius: BorderRadius.circular(24),
-                    dropdownColor: toneOf(context).panelA.withValues(alpha: 1),
-                    elevation: 3,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: uiMuted(context),
+                  MenuAnchor(
+                    style: const MenuStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Colors.transparent,
+                      ),
+                      surfaceTintColor: WidgetStatePropertyAll(
+                        Colors.transparent,
+                      ),
+                      elevation: WidgetStatePropertyAll(0),
+                      padding: WidgetStatePropertyAll(EdgeInsets.zero),
                     ),
-                    items: [
-                      for (final v in [
-                        'Bible order',
-                        'Recently saved',
-                        'Tag name',
-                      ])
-                        DropdownMenuItem(value: v, child: Text(v)),
+                    menuChildren: [
+                      FloatingGlass.panel(
+                        radius: 20,
+                        padding: const EdgeInsets.all(6),
+                        child: SizedBox(
+                          width: 184,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (final v in [
+                                'Bible order',
+                                'Recently saved',
+                                'Tag name',
+                              ])
+                                MenuItemButton(
+                                  onPressed: () => setState(() => order = v),
+                                  trailingIcon: order == v
+                                      ? const AppIcon(
+                                          LucideIcons.check,
+                                          size: 15,
+                                        )
+                                      : null,
+                                  child: Text(v),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
-                    onChanged: (v) => setState(() => order = v!),
+                    builder: (context, controller, _) => TextButton.icon(
+                      onPressed: () => controller.isOpen
+                          ? controller.close()
+                          : controller.open(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: uiMuted(context),
+                        textStyle: const TextStyle(fontSize: 12),
+                      ),
+                      iconAlignment: IconAlignment.end,
+                      icon: const AppIcon(LucideIcons.chevronDown, size: 16),
+                      label: Text(order),
+                    ),
                   ),
                 ],
               ),

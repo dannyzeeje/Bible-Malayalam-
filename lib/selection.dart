@@ -73,12 +73,9 @@ Future<void> selectionActions(
   final ids = verses.map((v) => v.id).toList();
   final allSaved = ids.every(s.bookmarks.contains);
   bool applied = false;
-  final noteRequested = await showModalBottomSheet<bool>(
+  final noteRequested = await showFrostedSheet<bool>(
     context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheet) => GlassPanel(
+    builder: (sheet) => FloatingGlass.panel(
       radius: 32,
       padding: EdgeInsets.fromLTRB(
         20,
@@ -238,11 +235,8 @@ Future<void> editSelectionNote(
 ) async {
   if (verses.isEmpty) return;
   final anchor = verses.first.id;
-  final value = await showModalBottomSheet<String>(
+  final value = await showFrostedSheet<String>(
     context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => NoteComposer(
       title: passageLabel(verses),
       initial: s.notes[anchor] ?? '',
@@ -286,7 +280,7 @@ class _NoteComposerState extends State<NoteComposer> {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-    child: GlassPanel(
+    child: FloatingGlass.panel(
       radius: 32,
       padding: EdgeInsets.fromLTRB(
         22,
