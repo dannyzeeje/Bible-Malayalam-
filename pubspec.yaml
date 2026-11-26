@@ -1,7 +1,7 @@
 name: word_bible
 description: An offline Malayalam Bible reader with English controls.
 publish_to: none
-version: 2.3.10+26
+version: 2.3.11+27
 environment:
   sdk: ^3.10.1
 dependencies:
@@ -9,6 +9,7 @@ dependencies:
     sdk: flutter
   characters: ^1.4.0
   cupertino_icons: ^1.0.8
+  lucide_icons_flutter: ^4.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -29,6 +30,7 @@ flutter:
     - assets/fonts/Lora-OFL.txt
     - assets/fonts/Chilanka-OFL.txt
     - assets/fonts/BalooChettan2-OFL.txt
+    - assets/fonts/Lucide-LICENSE.txt
   fonts:
     - family: Malayalam
       fonts:

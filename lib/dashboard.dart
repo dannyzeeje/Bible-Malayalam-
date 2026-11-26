@@ -33,13 +33,13 @@ class ReadingHub extends StatelessWidget {
                     ),
                   ),
                   glassIcon(
-                    CupertinoIcons.clock,
+                    LucideIcons.clock,
                     'Reading history',
                     () => openHistory(context, s),
                   ),
                   const SizedBox(width: 8),
                   glassIcon(
-                    CupertinoIcons.gear,
+                    LucideIcons.settings,
                     'Settings',
                     () => Navigator.push(
                       context,
@@ -236,7 +236,7 @@ class ReadingHub extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 10),
                                 glassIcon(
-                                  CupertinoIcons.checkmark,
+                                  LucideIcons.check,
                                   'Mark day complete',
                                   () {
                                     s.activePlan = p.id;
@@ -271,7 +271,7 @@ class ReadingHub extends StatelessWidget {
                     vertical: 8,
                   ),
                   leading: const AppIcon(
-                    CupertinoIcons.bookmark,
+                    LucideIcons.bookmark,
                     color: Color(0xffd4a139),
                   ),
                   title: const Text(
@@ -279,7 +279,7 @@ class ReadingHub extends StatelessWidget {
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
                   trailing: const AppIcon(
-                    CupertinoIcons.chevron_right,
+                    LucideIcons.chevronRightDir,
                     size: 17,
                   ),
                   onTap: onSaved,
@@ -339,7 +339,7 @@ class PlanCover extends StatelessWidget {
           ),
         ),
         AppIcon(
-          CupertinoIcons.book,
+          LucideIcons.bookOpen,
           size: width > 70 ? 24 : 16,
           color: uiAccent(context),
         ),
@@ -390,7 +390,7 @@ class ReadingFeature extends StatelessWidget {
                     ),
                   ),
                   AppIcon(
-                    CupertinoIcons.book,
+                    LucideIcons.bookOpen,
                     size: 32,
                     color: uiAccent(context),
                   ),
@@ -430,7 +430,7 @@ class ReadingFeature extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: AppIcon(
-                      CupertinoIcons.arrow_right,
+                      LucideIcons.arrowRightDir,
                       color: uiInk(context),
                       size: 21,
                     ),

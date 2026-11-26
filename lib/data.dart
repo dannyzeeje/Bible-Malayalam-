@@ -271,6 +271,8 @@ class BibleStore extends ChangeNotifier {
   Map<String, Set<int>> planCompleted = {};
   String activePlan = '';
   bool autoHide = true, haptics = true, keepAwake = false;
+  static const double minAutoScrollSpeed = .5, maxAutoScrollSpeed = 3;
+  double autoScrollSpeed = 1;
   static const double fixedBlur = 18;
   double get blurStrength => fixedBlur;
   final themeChanges = ValueNotifier<int>(0);
@@ -430,6 +432,12 @@ class BibleStore extends ChangeNotifier {
     activePlan = prefs['activePlan'] as String? ?? '';
     if (!allPlans.any((p) => p.id == activePlan)) activePlan = '';
     autoHide = prefs['autoHide'] as bool? ?? true;
+    final speed = prefs['autoScrollSpeed'];
+    if (speed is num && speed.isFinite) {
+      autoScrollSpeed = speed
+          .clamp(minAutoScrollSpeed, maxAutoScrollSpeed)
+          .toDouble();
+    }
     haptics = prefs['haptics'] as bool? ?? true;
     keepAwake = prefs['keepAwake'] as bool? ?? false;
     defaultHighlight = ((prefs['defaultHighlight'] as num?)?.toInt() ?? 0)
@@ -466,6 +474,7 @@ class BibleStore extends ChangeNotifier {
     'activePlan': activePlan,
     'planCompleted': planCompleted.map((k, v) => MapEntry(k, v.toList())),
     'autoHide': autoHide,
+    'autoScrollSpeed': autoScrollSpeed,
     'haptics': haptics,
     'keepAwake': keepAwake,
     'customPlans': [

@@ -9,6 +9,7 @@ An offline Malayalam Bible reader for Android with a simple interface and Englis
 - Bookmarks, highlights, notes and saved reading position.
 - Built-in and custom reading plans with progress tracking.
 - Light, Paper and Dark themes, six Malayalam fonts, and adjustable text size and spacing.
+- Hands-free auto-scroll from the reader toolbar, with adjustable speed.
 
 No account or internet connection is required. Notes, bookmarks and reading progress stay on your device; clearing app data or uninstalling removes them.
 

@@ -15,7 +15,7 @@ class PlanCatalog extends StatelessWidget {
                 context,
                 'Reading plans',
                 trailing: glassIcon(
-                  CupertinoIcons.plus,
+                  LucideIcons.plus,
                   'Create plan',
                   () => Navigator.push(
                     context,
@@ -97,7 +97,7 @@ class PlanCatalog extends StatelessWidget {
               ),
             ),
             AppIcon(
-              CupertinoIcons.chevron_right,
+              LucideIcons.chevronRightDir,
               size: 14,
               color: uiMuted(context),
             ),
@@ -231,7 +231,7 @@ class _CustomPlanPageState extends State<CustomPlanPage> {
                             ),
                           ),
                           trailing: AppIcon(
-                            CupertinoIcons.chevron_right,
+                            LucideIcons.chevronRightDir,
                             size: 14,
                             color: uiMuted(context),
                           ),
@@ -326,7 +326,7 @@ class _PlanBooksSheetState extends State<PlanBooksSheet> {
                     setState(() => query = v.toLowerCase().trim()),
                 decoration: InputDecoration(
                   hintText: 'Find a book',
-                  prefixIcon: AppIcon(CupertinoIcons.search, size: 17),
+                  prefixIcon: AppIcon(LucideIcons.search, size: 17),
                 ),
               ),
               SizedBox(height: 8),
@@ -363,8 +363,8 @@ class _PlanBooksSheetState extends State<PlanBooksSheet> {
                         ),
                         trailing: AppIcon(
                           selected.contains(e.key)
-                              ? CupertinoIcons.checkmark_circle_fill
-                              : CupertinoIcons.circle,
+                              ? LucideIcons.circleCheck
+                              : LucideIcons.circle,
                           color: uiAccent(context),
                           size: 23,
                         ),

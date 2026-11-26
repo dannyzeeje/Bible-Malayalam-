@@ -130,9 +130,12 @@ class _StatusBarVeilState extends State<StatusBarVeil> {
 
 /// Floating surfaces alone sample the content behind them.
 class FloatingGlass extends StatelessWidget {
+  static final _blurFilter = ImageFilter.blur(sigmaX: 18, sigmaY: 18);
+  static final _readerBlur = ImageFilter.blur(sigmaX: 10, sigmaY: 10);
   final Widget child;
   final bool? dark;
   final bool blur;
+  final bool readerStyle;
   final double radius;
   final EdgeInsets padding;
   const FloatingGlass({
@@ -141,23 +144,57 @@ class FloatingGlass extends StatelessWidget {
     this.radius = 999,
     this.dark,
     this.blur = false,
+    this.readerStyle = false,
     this.padding = EdgeInsets.zero,
   });
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(radius),
-    child: BackdropFilter(
-      enabled: blur,
-      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-      child: GlassPanel(
-        radius: radius,
-        padding: padding,
-        translucent: true,
-        glassOpacity: blur ? .68 : null,
-        child: child,
+  Widget build(BuildContext context) {
+    final corners = BorderRadius.circular(radius);
+    final tone = toneOf(context);
+    final dark = tone.mode == 2;
+    return ClipRRect(
+      borderRadius: corners,
+      child: BackdropFilter(
+        enabled: blur,
+        filter: readerStyle ? _readerBlur : _blurFilter,
+        child: readerStyle
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: corners,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      tone.panelA.withValues(alpha: dark ? .58 : .51),
+                      tone.panelB.withValues(alpha: dark ? .40 : .32),
+                    ],
+                  ),
+                ),
+                child: DecoratedBox(
+                  position: DecorationPosition.foreground,
+                  decoration: BoxDecoration(
+                    borderRadius: corners,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: dark ? .18 : .91),
+                      width: .8,
+                    ),
+                  ),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Padding(padding: padding, child: child),
+                  ),
+                ),
+              )
+            : GlassPanel(
+                radius: radius,
+                padding: padding,
+                translucent: true,
+                glassOpacity: blur ? .68 : null,
+                child: child,
+              ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 Widget sheetGrip(BuildContext context) => Semantics(
